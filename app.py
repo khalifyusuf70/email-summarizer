@@ -726,3 +726,19 @@ def test_dashboard():
         }
     ]
     return jsonify(sample_data)
+@app.route('/test-html')
+def test_html():
+    """Test if HTML rendering works"""
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Test Page</title>
+    </head>
+    <body>
+        <h1>✅ HTML is working!</h1>
+        <p>If you can see this, Flask can render HTML.</p>
+        <a href="/dashboard">Go to Dashboard</a>
+    </body>
+    </html>
+    """
