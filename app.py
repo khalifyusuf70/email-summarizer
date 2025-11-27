@@ -243,12 +243,16 @@ class EmailSummarizerAgent:
         for i in range(len(batch_emails)):
             email_num = start_index + i + 1
             
-            # Try multiple patterns to find the summary - FIXED ESCAPE SEQUENCES
+            # Try multiple patterns to find the summary - COMPLETELY FIXED ESCAPE SEQUENCES
             patterns = [
-                rf"\*\*Email {email_num}:\*\* (.*?)(?=\*\*Email {email_num + 1}:\*\*|\\Z)",
-                rf"Email {email_num}: (.*?)(?=Email {email_num + 1}:|\\Z)",
-                rf"\*\*Email {email_num}:\*\* (.*?)(?=Email {email_num + 1}:|\\Z)",
-                rf"Email {email_num}: (.*?)(?=\*\*Email {email_num + 1}:\*\*|\\Z)"
+                # Pattern 1: **Email X:** content until **Email X+1:** or end
+                r"\*\*Email " + str(email_num) + r":\*\* (.*?)(?=\*\*Email " + str(email_num + 1) + r":\*\*|$)",
+                # Pattern 2: Email X: content until Email X+1: or end  
+                r"Email " + str(email_num) + r": (.*?)(?=Email " + str(email_num + 1) + r":|$)",
+                # Pattern 3: **Email X:** content until Email X+1: or end
+                r"\*\*Email " + str(email_num) + r":\*\* (.*?)(?=Email " + str(email_num + 1) + r":|$)",
+                # Pattern 4: Email X: content until **Email X+1:** or end
+                r"Email " + str(email_num) + r": (.*?)(?=\*\*Email " + str(email_num + 1) + r":\*\*|$)"
             ]
             
             found = False
@@ -395,21 +399,28 @@ class EmailSummarizerAgent:
             # Step 2: Summarize ALL emails in batches
             all_summaries = self.summarize_emails_in_batches(emails_data)
             
-            # Store the processed emails and summaries for the dashboard
-            store_email_data_for_dashboard(emails_data, all_summaries)
+            # Step 3: Store the processed emails and summaries for the dashboard
+            storage_success = store_email_data_for_dashboard(emails_data, all_summaries)
             
-            # Step 3: Create Word document with ALL emails
+            # Step 4: Create Word document with ALL emails
             word_file = self.create_word_document(emails_data, all_summaries)
             
-            # Step 4: Send summary email with complete report
-            success = self.send_summary_email(word_file)
+            # Step 5: Send summary email with complete report
+            email_success = self.send_summary_email(word_file)
             
-            if success:
+            if email_success:
                 print(f"✅ COMPLETE summary process finished at {datetime.now()}")
                 print(f"✅ Processed {len(emails_data)} emails total")
                 
                 # Save run statistics
                 save_run_stats(len(emails_data), len(all_summaries))
+                
+                # VERIFY DATA STORAGE
+                print(f"\n{'='*60}")
+                print("VERIFYING DATA STORAGE FOR DASHBOARD...")
+                print(f"{'='*60}")
+                verify_data_storage()
+                
             else:
                 print(f"❌ Process completed with errors")
                 
@@ -484,50 +495,116 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
         conn = sqlite3.connect('email_summaries.db')
         c = conn.cursor()
         
-        # Get the latest run ID (this might be the issue - we need to get the ID we just inserted)
-        c.execute('SELECT id FROM summary_runs ORDER BY id DESC LIMIT 1')
+        print(f"📊 Starting to store {len(emails_data)} emails for dashboard...")
+        
+        # Get the latest run ID 
+        c.execute('SELECT id, run_date FROM summary_runs ORDER BY id DESC LIMIT 1')
         latest_run = c.fetchone()
         
         if not latest_run:
-            print("❌ No run ID found - cannot store email data")
+            print("❌ CRITICAL: No run ID found in summary_runs table!")
+            print("   This means save_run_stats() didn't work properly")
             conn.close()
-            return
+            return False
             
-        run_id = latest_run[0]
-        print(f"📊 Storing {len(emails_data)} emails for dashboard under run_id: {run_id}")
+        run_id, run_date = latest_run
+        print(f"📊 Found run_id: {run_id} from {run_date}")
+        print(f"📊 We have {len(all_summaries)} summaries out of {len(emails_data)} emails")
         
         # Clear previous email data for this run
-        c.execute('DELETE FROM email_data WHERE run_id = ?', (run_id,))
+        delete_count = c.execute('DELETE FROM email_data WHERE run_id = ?', (run_id,)).rowcount
+        if delete_count > 0:
+            print(f"🗑️  Cleared {delete_count} previous email records for this run")
         
         # Insert new email data
         inserted_count = 0
+        failed_count = 0
+        
         for i, email in enumerate(emails_data, 1):
             summary = all_summaries.get(i, "Summary being processed...")
             
-            c.execute('''
-                INSERT INTO email_data 
-                (run_id, email_number, sender, receiver, subject, summary)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (
-                run_id,
-                i,
-                email['from'][:100] if email['from'] else "Unknown",
-                email['to'][:100] if email['to'] else "Unknown", 
-                email['subject'][:200] if email['subject'] else "No Subject",
-                summary[:500]
-            ))
-            inserted_count += 1
-            
-            if inserted_count % 50 == 0:
-                print(f"📥 Stored {inserted_count} emails in database...")
+            try:
+                c.execute('''
+                    INSERT INTO email_data 
+                    (run_id, email_number, sender, receiver, subject, summary)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    run_id,
+                    i,
+                    email['from'][:100] if email['from'] else "Unknown",
+                    email['to'][:100] if email['to'] else "Unknown", 
+                    email['subject'][:200] if email['subject'] else "No Subject",
+                    summary[:500]
+                ))
+                inserted_count += 1
+                
+                if inserted_count % 50 == 0:
+                    print(f"📥 Stored {inserted_count} emails in database...")
+                    
+            except Exception as e:
+                print(f"❌ Failed to store email {i}: {e}")
+                failed_count += 1
+                continue
         
         conn.commit()
         conn.close()
-        print(f"✅ Successfully stored {inserted_count} emails in database for dashboard")
+        
+        print(f"✅ Database storage complete:")
+        print(f"   ✅ Successfully stored: {inserted_count} emails")
+        print(f"   ❌ Failed to store: {failed_count} emails")
+        print(f"   📊 Total processed: {len(emails_data)} emails")
+        
+        return inserted_count > 0
         
     except Exception as e:
-        print(f"❌ Error storing email data: {e}")
-        print(f"Full error: {traceback.format_exc()}")
+        print(f"❌ CRITICAL ERROR storing email data: {e}")
+        print(f"Full traceback: {traceback.format_exc()}")
+        return False
+
+def verify_data_storage():
+    """Verify that data was properly stored in database"""
+    try:
+        conn = sqlite3.connect('email_summaries.db')
+        c = conn.cursor()
+        
+        # Check latest run
+        c.execute('SELECT id, run_date, total_emails, processed_emails FROM summary_runs ORDER BY id DESC LIMIT 1')
+        latest_run = c.fetchone()
+        
+        if not latest_run:
+            print("❌ VERIFICATION FAILED: No runs found in database")
+            return False
+            
+        run_id, run_date, total_emails, processed_emails = latest_run
+        print(f"📋 Latest run: ID={run_id}, Date={run_date}, Emails={total_emails}")
+        
+        # Check email data for this run
+        c.execute('SELECT COUNT(*) FROM email_data WHERE run_id = ?', (run_id,))
+        stored_emails = c.fetchone()[0]
+        
+        print(f"📋 Stored emails for this run: {stored_emails}")
+        
+        # Get a sample of stored data
+        c.execute('SELECT email_number, sender, subject FROM email_data WHERE run_id = ? LIMIT 3', (run_id,))
+        samples = c.fetchall()
+        
+        print("📋 Sample stored emails:")
+        for sample in samples:
+            print(f"   - #{sample[0]}: From '{sample[1]}' - '{sample[2]}'")
+        
+        conn.close()
+        
+        success = stored_emails > 0
+        if success:
+            print(f"✅ VERIFICATION PASSED: {stored_emails} emails stored in database")
+        else:
+            print(f"❌ VERIFICATION FAILED: No emails stored for run {run_id}")
+            
+        return success
+        
+    except Exception as e:
+        print(f"❌ VERIFICATION ERROR: {e}")
+        return False
 
 # ==================== FLASK ROUTES ====================
 
