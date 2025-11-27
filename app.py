@@ -782,3 +782,22 @@ if __name__ == "__main__":
         # Web server mode
         print("🌐 Starting web server...")
         app.run(host='0.0.0.0', port=5000, debug=False)
+# Add these routes to your app.py
+
+@app.route('/api/debug')
+def api_debug():
+    """Debug API endpoint"""
+    return jsonify({
+        "status": "API is working",
+        "timestamp": datetime.now().isoformat(),
+        "endpoint": "/api/debug"
+    })
+
+@app.route('/api/test-json')
+def test_json():
+    """Test JSON response"""
+    return jsonify({
+        "message": "This is a test JSON response",
+        "numbers": [1, 2, 3],
+        "timestamp": datetime.now().isoformat()
+    })
