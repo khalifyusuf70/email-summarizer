@@ -16,6 +16,7 @@ from flask import Flask, render_template, jsonify, request, redirect
 import logging
 import sqlite3
 import json
+import traceback
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -244,10 +245,10 @@ class EmailSummarizerAgent:
             
             # Try multiple patterns to find the summary - FIXED ESCAPE SEQUENCES
             patterns = [
-                fr"\*\*Email {email_num}:\*\* (.*?)(?=\*\*Email {email_num + 1}:\*\*|\Z)",
-                fr"Email {email_num}: (.*?)(?=Email {email_num + 1}:|\Z)",
-                fr"\*\*Email {email_num}:\*\* (.*?)(?=Email {email_num + 1}:|\Z)",
-                fr"Email {email_num}: (.*?)(?=\*\*Email {email_num + 1}:\*\*|\Z)"
+                rf"\*\*Email {email_num}:\*\* (.*?)(?=\*\*Email {email_num + 1}:\*\*|\\Z)",
+                rf"Email {email_num}: (.*?)(?=Email {email_num + 1}:|\\Z)",
+                rf"\*\*Email {email_num}:\*\* (.*?)(?=Email {email_num + 1}:|\\Z)",
+                rf"Email {email_num}: (.*?)(?=\*\*Email {email_num + 1}:\*\*|\\Z)"
             ]
             
             found = False
@@ -483,15 +484,23 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
         conn = sqlite3.connect('email_summaries.db')
         c = conn.cursor()
         
-        # Get the latest run ID
+        # Get the latest run ID (this might be the issue - we need to get the ID we just inserted)
         c.execute('SELECT id FROM summary_runs ORDER BY id DESC LIMIT 1')
         latest_run = c.fetchone()
-        run_id = latest_run[0] if latest_run else 1
+        
+        if not latest_run:
+            print("❌ No run ID found - cannot store email data")
+            conn.close()
+            return
+            
+        run_id = latest_run[0]
+        print(f"📊 Storing {len(emails_data)} emails for dashboard under run_id: {run_id}")
         
         # Clear previous email data for this run
         c.execute('DELETE FROM email_data WHERE run_id = ?', (run_id,))
         
         # Insert new email data
+        inserted_count = 0
         for i, email in enumerate(emails_data, 1):
             summary = all_summaries.get(i, "Summary being processed...")
             
@@ -503,18 +512,24 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
                 run_id,
                 i,
                 email['from'][:100] if email['from'] else "Unknown",
-                email['to'][:100] if email['to'] else "Unknown",
+                email['to'][:100] if email['to'] else "Unknown", 
                 email['subject'][:200] if email['subject'] else "No Subject",
                 summary[:500]
             ))
+            inserted_count += 1
+            
+            if inserted_count % 50 == 0:
+                print(f"📥 Stored {inserted_count} emails in database...")
         
         conn.commit()
         conn.close()
-        print(f"✅ Stored {len(emails_data)} emails for dashboard")
+        print(f"✅ Successfully stored {inserted_count} emails in database for dashboard")
+        
     except Exception as e:
         print(f"❌ Error storing email data: {e}")
+        print(f"Full error: {traceback.format_exc()}")
 
-# ==================== FLASK ROUTES - UPDATED ====================
+# ==================== FLASK ROUTES ====================
 
 @app.route('/')
 def root():
@@ -621,9 +636,79 @@ def api_home():
             "trigger": "/api/trigger-summary",
             "health": "/health",
             "stats": "/api/stats",
-            "recent_summaries": "/api/recent-summaries"
+            "recent_summaries": "/api/recent-summaries",
+            "debug": "/api/debug",
+            "debug_database": "/api/debug-database",
+            "test_json": "/api/test-json"
         }
     })
+
+@app.route('/api/debug')
+def api_debug():
+    """Debug API endpoint"""
+    return jsonify({
+        "status": "API is working",
+        "timestamp": datetime.now().isoformat(),
+        "endpoint": "/api/debug"
+    })
+
+@app.route('/api/test-json')
+def test_json():
+    """Test JSON response"""
+    return jsonify({
+        "message": "This is a test JSON response",
+        "numbers": [1, 2, 3],
+        "timestamp": datetime.now().isoformat()
+    })
+
+@app.route('/api/debug-database')
+def debug_database():
+    """Debug database contents"""
+    try:
+        conn = sqlite3.connect('email_summaries.db')
+        c = conn.cursor()
+        
+        # Check summary_runs
+        c.execute('SELECT COUNT(*) as run_count FROM summary_runs')
+        run_count = c.fetchone()[0]
+        
+        # Check email_data
+        c.execute('SELECT COUNT(*) as email_count FROM email_data')
+        email_count = c.fetchone()[0]
+        
+        # Get latest run details
+        c.execute('SELECT * FROM summary_runs ORDER BY id DESC LIMIT 1')
+        latest_run = c.fetchone()
+        
+        # Get some email data samples
+        c.execute('SELECT * FROM email_data ORDER BY id DESC LIMIT 5')
+        sample_emails = c.fetchall()
+        
+        conn.close()
+        
+        return jsonify({
+            "database_status": "connected",
+            "summary_runs_count": run_count,
+            "email_data_count": email_count,
+            "latest_run": {
+                "id": latest_run[0] if latest_run else None,
+                "date": latest_run[1] if latest_run else None,
+                "total_emails": latest_run[2] if latest_run else None,
+                "processed_emails": latest_run[3] if latest_run else None
+            } if latest_run else None,
+            "sample_emails": [
+                {
+                    "id": email[0],
+                    "run_id": email[1], 
+                    "email_number": email[2],
+                    "sender": email[3],
+                    "subject": email[5]
+                } for email in sample_emails
+            ]
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/stats')
 def get_stats():
@@ -782,22 +867,3 @@ if __name__ == "__main__":
         # Web server mode
         print("🌐 Starting web server...")
         app.run(host='0.0.0.0', port=5000, debug=False)
-# Add these routes to your app.py
-
-@app.route('/api/debug')
-def api_debug():
-    """Debug API endpoint"""
-    return jsonify({
-        "status": "API is working",
-        "timestamp": datetime.now().isoformat(),
-        "endpoint": "/api/debug"
-    })
-
-@app.route('/api/test-json')
-def test_json():
-    """Test JSON response"""
-    return jsonify({
-        "message": "This is a test JSON response",
-        "numbers": [1, 2, 3],
-        "timestamp": datetime.now().isoformat()
-    })
