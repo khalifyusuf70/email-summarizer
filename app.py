@@ -1,4 +1,3 @@
-
 from docx import Document
 from datetime import datetime, timedelta
 import smtplib
@@ -13,7 +12,7 @@ import requests
 import os
 import re
 import time
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect
 import logging
 import sqlite3
 import json
@@ -243,12 +242,12 @@ class EmailSummarizerAgent:
         for i in range(len(batch_emails)):
             email_num = start_index + i + 1
             
-            # Try multiple patterns to find the summary
+            # Try multiple patterns to find the summary - FIXED ESCAPE SEQUENCES
             patterns = [
-                f"\*\*Email {email_num}:\*\* (.*?)(?=\*\*Email {email_num + 1}:\*\*|\Z)",
-                f"Email {email_num}: (.*?)(?=Email {email_num + 1}:|\Z)",
-                f"\*\*Email {email_num}:\*\* (.*?)(?=Email {email_num + 1}:|\Z)",
-                f"Email {email_num}: (.*?)(?=\*\*Email {email_num + 1}:\*\*|\Z)"
+                fr"\*\*Email {email_num}:\*\* (.*?)(?=\*\*Email {email_num + 1}:\*\*|\Z)",
+                fr"Email {email_num}: (.*?)(?=Email {email_num + 1}:|\Z)",
+                fr"\*\*Email {email_num}:\*\* (.*?)(?=Email {email_num + 1}:|\Z)",
+                fr"Email {email_num}: (.*?)(?=\*\*Email {email_num + 1}:\*\*|\Z)"
             ]
             
             found = False
@@ -515,24 +514,116 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
     except Exception as e:
         print(f"❌ Error storing email data: {e}")
 
-# Flask Routes
+# ==================== FLASK ROUTES - UPDATED ====================
+
 @app.route('/')
-def home():
-    return jsonify({
-        "status": "Email Summarizer API is running",
-        "endpoints": {
-            "dashboard": "/dashboard",
-            "trigger": "/trigger-summary", 
-            "health": "/health",
-            "stats": "/api/stats",
-            "email_data": "/api/email-data"
-        }
-    })
+def root():
+    """Redirect root to dashboard"""
+    return redirect('/dashboard')
 
 @app.route('/dashboard')
 def dashboard():
     """Main dashboard page"""
-    return render_template('dashboard.html')
+    try:
+        print("📊 Serving dashboard page...")
+        
+        # Check if template file exists
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        template_path = os.path.join(current_dir, 'templates', 'dashboard.html')
+        
+        if not os.path.exists(template_path):
+            return f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; padding: 40px;">
+                    <h1>❌ Template File Missing</h1>
+                    <p><strong>Expected path:</strong> {template_path}</p>
+                    <p><strong>Current directory:</strong> {current_dir}</p>
+                    <p><strong>Files in current directory:</strong> {', '.join(os.listdir(current_dir))}</p>
+                    <p>Please make sure the 'templates' folder exists and contains 'dashboard.html'</p>
+                </body>
+            </html>
+            """, 500
+            
+        return render_template('dashboard.html')
+        
+    except Exception as e:
+        return f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; padding: 40px;">
+                <h1>❌ Dashboard Error</h1>
+                <p><strong>Error:</strong> {str(e)}</p>
+                <p><a href="/test-html">Test HTML Page</a></p>
+                <p><a href="/api">API Endpoints</a></p>
+            </body>
+        </html>
+        """, 500
+
+@app.route('/test-html')
+def test_html():
+    """Test if HTML rendering works"""
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Test Page</title>
+        <style>
+            body { 
+                font-family: Arial, sans-serif; 
+                padding: 40px;
+                background: #f5f7fa;
+            }
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+                background: white;
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }
+            .success { 
+                color: #10b981; 
+                font-size: 24px;
+            }
+            .btn {
+                display: inline-block;
+                padding: 12px 24px;
+                background: #4f46e5;
+                color: white;
+                text-decoration: none;
+                border-radius: 8px;
+                margin: 10px 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1 class="success">✅ HTML is Working!</h1>
+            <p>If you can see this page, Flask can render HTML properly.</p>
+            <p>Now check the dashboard link below:</p>
+            <div>
+                <a class="btn" href="/dashboard">Go to Dashboard</a>
+                <a class="btn" href="/api">API Endpoints</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+@app.route('/api')
+def api_home():
+    """API home page"""
+    return jsonify({
+        "status": "Email Summarizer API is running",
+        "timestamp": datetime.now().isoformat(),
+        "endpoints": {
+            "dashboard": "/dashboard",
+            "test_page": "/test-html", 
+            "trigger": "/api/trigger-summary",
+            "health": "/health",
+            "stats": "/api/stats",
+            "recent_summaries": "/api/recent-summaries"
+        }
+    })
 
 @app.route('/api/stats')
 def get_stats():
@@ -618,7 +709,7 @@ def get_recent_summaries():
         
     except Exception as e:
         print(f"Error getting recent summaries: {e}")
-        # Fallback to mock data if database error
+        # Fallback to mock data if database is not available
         return jsonify(get_fallback_email_data())
 
 def get_fallback_email_data():
@@ -691,54 +782,3 @@ if __name__ == "__main__":
         # Web server mode
         print("🌐 Starting web server...")
         app.run(host='0.0.0.0', port=5000, debug=False)
-# Add these debug routes to your app.py
-
-@app.route('/debug')
-def debug_info():
-    """Debug endpoint to check if app is working"""
-    return jsonify({
-        "status": "App is running",
-        "timestamp": datetime.now().isoformat(),
-        "environment_variables_set": {
-            "DEEPSEEK_API_KEY": bool(os.getenv('DEEPSEEK_API_KEY')),
-            "SOURCE_EMAIL": bool(os.getenv('SOURCE_EMAIL')),
-            "SOURCE_PASSWORD": bool(os.getenv('SOURCE_PASSWORD'))
-        }
-    })
-
-@app.route('/test-dashboard')
-def test_dashboard():
-    """Test dashboard with sample data"""
-    sample_data = [
-        {
-            "number": 1,
-            "from": "test@jubalandstate.so",
-            "to": "archives@jubalandstate.so",
-            "subject": "Test Email 1",
-            "summary": "This is a test summary to verify the dashboard is working correctly."
-        },
-        {
-            "number": 2,
-            "from": "admin@jubalandstate.so",
-            "to": "archives@jubalandstate.so",
-            "subject": "Test Email 2", 
-            "summary": "Another test email to confirm the table display is functioning properly."
-        }
-    ]
-    return jsonify(sample_data)
-@app.route('/test-html')
-def test_html():
-    """Test if HTML rendering works"""
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Test Page</title>
-    </head>
-    <body>
-        <h1>✅ HTML is working!</h1>
-        <p>If you can see this, Flask can render HTML.</p>
-        <a href="/dashboard">Go to Dashboard</a>
-    </body>
-    </html>
-    """
