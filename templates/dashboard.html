@@ -266,6 +266,10 @@
             background: #ef4444;
         }
         
+        .notification.info {
+            background: #3b82f6;
+        }
+        
         .debug-info {
             background: #f3f4f6;
             padding: 15px;
@@ -273,6 +277,16 @@
             margin-bottom: 20px;
             font-family: monospace;
             font-size: 12px;
+            border-left: 4px solid #6b7280;
+        }
+        
+        .debug-info a {
+            color: #4f46e5;
+            text-decoration: none;
+        }
+        
+        .debug-info a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -369,21 +383,45 @@
                 showNotification('🔧 Testing connections...', 'info');
                 
                 // Test basic connectivity
-                const debugResponse = await fetch('/debug');
+                const debugResponse = await fetch('/api/debug');
+                if (!debugResponse.ok) {
+                    throw new Error(`Debug API error: ${debugResponse.status}`);
+                }
                 const debugData = await debugResponse.json();
                 
                 // Test stats endpoint
                 const statsResponse = await fetch('/api/stats');
-                const statsData = await statsResponse.json();
+                if (!statsResponse.ok) {
+                    throw new Error(`Stats API error: ${statsResponse.status}`);
+                }
+                const statsText = await statsResponse.text();
+                
+                // Check if response is JSON
+                let statsData;
+                try {
+                    statsData = JSON.parse(statsText);
+                } catch (e) {
+                    throw new Error(`Stats API returned HTML instead of JSON: ${statsText.substring(0, 100)}...`);
+                }
                 
                 // Test email data endpoint
                 const emailResponse = await fetch('/api/recent-summaries');
-                const emailData = await emailResponse.json();
+                if (!emailResponse.ok) {
+                    throw new Error(`Email API error: ${emailResponse.status}`);
+                }
+                const emailText = await emailResponse.text();
+                
+                let emailData;
+                try {
+                    emailData = JSON.parse(emailText);
+                } catch (e) {
+                    throw new Error(`Email API returned HTML instead of JSON: ${emailText.substring(0, 100)}...`);
+                }
                 
                 // Update debug info
                 document.getElementById('debugInfo').innerHTML = `
                     <strong>Connection Test Results:</strong><br>
-                    ✅ App Status: ${debugData.status}<br>
+                    ✅ Debug API: Working<br>
                     ✅ Stats Endpoint: Working (${statsResponse.status})<br>
                     ✅ Email Endpoint: Working (${emailResponse.status})<br>
                     📧 Emails Found: ${emailData.length || 0}<br>
@@ -398,9 +436,11 @@
                     <strong>Connection Issues:</strong><br>
                     ❌ Error: ${error.message}<br>
                     🔗 Check browser console (F12) for details<br>
-                    🕒 Last Check: ${new Date().toLocaleTimeString()}
+                    🕒 Last Check: ${new Date().toLocaleTimeString()}<br>
+                    <a href="/api/debug" target="_blank">Test API Debug</a> | 
+                    <a href="/api/test-json" target="_blank">Test JSON</a>
                 `;
-                showNotification('❌ Connection test failed', 'error');
+                showNotification('❌ Connection test failed: ' + error.message, 'error');
             }
         }
         
@@ -408,12 +448,20 @@
             try {
                 console.log('Loading dashboard data...');
                 
-                // Load stats
+                // Load stats with error handling
                 const statsResponse = await fetch('/api/stats');
                 if (!statsResponse.ok) {
                     throw new Error(`Stats API error: ${statsResponse.status}`);
                 }
-                const stats = await statsResponse.json();
+                
+                const statsText = await statsResponse.text();
+                let stats;
+                try {
+                    stats = JSON.parse(statsText);
+                } catch (e) {
+                    throw new Error(`Stats API returned invalid JSON: ${statsText.substring(0, 100)}`);
+                }
+                
                 updateStats(stats);
                 
                 // Load email data for the table
@@ -421,7 +469,15 @@
                 if (!emailResponse.ok) {
                     throw new Error(`Email API error: ${emailResponse.status}`);
                 }
-                const emailData = await emailResponse.json();
+                
+                const emailText = await emailResponse.text();
+                let emailData;
+                try {
+                    emailData = JSON.parse(emailText);
+                } catch (e) {
+                    throw new Error(`Email API returned invalid JSON: ${emailText.substring(0, 100)}`);
+                }
+                
                 updateEmailTable(emailData);
                 
                 // Update last updated timestamp
@@ -441,7 +497,7 @@
                     <tr>
                         <td colspan="5" class="no-data">
                             ❌ Error loading data: ${error.message}<br>
-                            Check if the server is running and try refreshing.
+                            <a href="/api/debug" target="_blank">Check API Status</a>
                         </td>
                     </tr>
                 `;
@@ -528,6 +584,10 @@
                     }
                 });
                 
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
                 const result = await response.json();
                 
                 if (result.status === 'success') {
@@ -553,7 +613,7 @@
         
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
-            notification.className = `notification ${type === 'error' ? 'error' : ''}`;
+            notification.className = `notification ${type === 'error' ? 'error' : type === 'info' ? 'info' : ''}`;
             notification.textContent = message;
             document.body.appendChild(notification);
             
