@@ -394,6 +394,9 @@ class EmailSummarizerAgent:
             # Step 2: Summarize ALL emails in batches
             all_summaries = self.summarize_emails_in_batches(emails_data)
             
+            # Store the processed emails and summaries for the dashboard
+            store_email_data_for_dashboard(emails_data, all_summaries)
+            
             # Step 3: Create Word document with ALL emails
             word_file = self.create_word_document(emails_data, all_summaries)
             
@@ -431,6 +434,20 @@ def init_db():
         )
     ''')
     
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS email_data (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id INTEGER,
+            email_number INTEGER,
+            sender TEXT,
+            receiver TEXT,
+            subject TEXT,
+            summary TEXT,
+            processed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (run_id) REFERENCES summary_runs (id)
+        )
+    ''')
+    
     conn.commit()
     conn.close()
 
@@ -460,6 +477,43 @@ def save_run_stats(total_emails, processed_emails):
     except Exception as e:
         print(f"❌ Error saving run stats: {e}")
 
+def store_email_data_for_dashboard(emails_data, all_summaries):
+    """Store processed email data for dashboard display"""
+    try:
+        conn = sqlite3.connect('email_summaries.db')
+        c = conn.cursor()
+        
+        # Get the latest run ID
+        c.execute('SELECT id FROM summary_runs ORDER BY id DESC LIMIT 1')
+        latest_run = c.fetchone()
+        run_id = latest_run[0] if latest_run else 1
+        
+        # Clear previous email data for this run
+        c.execute('DELETE FROM email_data WHERE run_id = ?', (run_id,))
+        
+        # Insert new email data
+        for i, email in enumerate(emails_data, 1):
+            summary = all_summaries.get(i, "Summary being processed...")
+            
+            c.execute('''
+                INSERT INTO email_data 
+                (run_id, email_number, sender, receiver, subject, summary)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                run_id,
+                i,
+                email['from'][:100] if email['from'] else "Unknown",
+                email['to'][:100] if email['to'] else "Unknown",
+                email['subject'][:200] if email['subject'] else "No Subject",
+                summary[:500]
+            ))
+        
+        conn.commit()
+        conn.close()
+        print(f"✅ Stored {len(emails_data)} emails for dashboard")
+    except Exception as e:
+        print(f"❌ Error storing email data: {e}")
+
 # Flask Routes
 @app.route('/')
 def home():
@@ -469,7 +523,8 @@ def home():
             "dashboard": "/dashboard",
             "trigger": "/trigger-summary", 
             "health": "/health",
-            "stats": "/api/stats"
+            "stats": "/api/stats",
+            "email_data": "/api/email-data"
         }
     })
 
@@ -523,24 +578,66 @@ def get_stats():
 
 @app.route('/api/recent-summaries')
 def get_recent_summaries():
-    """API endpoint for recent email summaries (mock data for now)"""
-    summaries = [
+    """API endpoint for recent email summaries - NOW WITH REAL DATA"""
+    try:
+        conn = sqlite3.connect('email_summaries.db')
+        c = conn.cursor()
+        
+        # Get the latest run ID
+        c.execute('SELECT id FROM summary_runs ORDER BY id DESC LIMIT 1')
+        latest_run = c.fetchone()
+        
+        if not latest_run:
+            return jsonify([])  # No data yet
+        
+        run_id = latest_run[0]
+        
+        # Get email data for the latest run
+        c.execute('''
+            SELECT email_number, sender, receiver, subject, summary 
+            FROM email_data 
+            WHERE run_id = ? 
+            ORDER BY email_number 
+            LIMIT 50
+        ''', (run_id,))
+        
+        email_data = []
+        for row in c.fetchall():
+            email_data.append({
+                "number": row[0],
+                "from": row[1],
+                "to": row[2],
+                "subject": row[3],
+                "summary": row[4]
+            })
+        
+        conn.close()
+        
+        return jsonify(email_data)
+        
+    except Exception as e:
+        print(f"Error getting recent summaries: {e}")
+        # Fallback to mock data if database error
+        return jsonify(get_fallback_email_data())
+
+def get_fallback_email_data():
+    """Provide fallback data if database is not available"""
+    return [
         {
-            "id": 1,
-            "subject": "Daily System Report",
+            "number": 1,
             "from": "system@jubalandstate.so",
-            "summary": "Automated system report showing all services are running normally with 99.8% uptime.",
-            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            "to": "archives@jubalandstate.so",
+            "subject": "Daily System Report",
+            "summary": "Automated system report showing all services are running normally with 99.8% uptime. No critical issues reported."
         },
         {
-            "id": 2, 
+            "number": 2,
+            "from": "secretary@jubalandstate.so", 
+            "to": "archives@jubalandstate.so",
             "subject": "Meeting Minutes Approval",
-            "from": "secretary@jubalandstate.so",
-            "summary": "Requesting approval for yesterday's executive meeting minutes and action items.",
-            "timestamp": (datetime.now() - timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')
+            "summary": "Requesting approval for executive meeting minutes. Key decisions include budget allocation and project timelines."
         }
     ]
-    return jsonify(summaries)
 
 @app.route('/api/trigger-manual', methods=['POST'])
 def trigger_manual_run():
