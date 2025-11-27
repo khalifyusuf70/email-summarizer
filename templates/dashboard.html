@@ -258,19 +258,38 @@
             z-index: 1000;
             font-weight: 500;
             transition: all 0.3s ease;
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        
+        .notification.error {
+            background: #ef4444;
+        }
+        
+        .debug-info {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
     <div class="dashboard">
+        <div class="debug-info" id="debugInfo">
+            Loading debug information...
+        </div>
+        
         <div class="header">
             <div>
                 <h1>📧 Email Summary Dashboard</h1>
-                <div class="last-updated" id="lastUpdated">Last updated: Just now</div>
+                <div class="last-updated" id="lastUpdated">Last updated: Loading...</div>
             </div>
             <div id="statusIndicator" class="status-indicator status-waiting">
                 <div class="status-dot"></div>
-                <span id="statusText">Waiting for Data</span>
+                <span id="statusText">Connecting...</span>
             </div>
         </div>
         
@@ -300,6 +319,9 @@
             <button class="btn btn-secondary" onclick="refreshData()">
                 📊 Refresh Data
             </button>
+            <button class="btn btn-secondary" onclick="testConnection()">
+                🔧 Test Connection
+            </button>
         </div>
         
         <div class="summary-table-container">
@@ -324,7 +346,7 @@
                     <tbody id="emailTableBody">
                         <tr>
                             <td colspan="5" class="no-data">
-                                No email data available. Run the summary process to generate reports.
+                                Loading email data...
                             </td>
                         </tr>
                     </tbody>
@@ -336,19 +358,69 @@
     <script>
         // Load data when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard loaded, testing connections...');
+            testConnection();
             loadDashboardData();
             setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
         });
         
+        async function testConnection() {
+            try {
+                showNotification('🔧 Testing connections...', 'info');
+                
+                // Test basic connectivity
+                const debugResponse = await fetch('/debug');
+                const debugData = await debugResponse.json();
+                
+                // Test stats endpoint
+                const statsResponse = await fetch('/api/stats');
+                const statsData = await statsResponse.json();
+                
+                // Test email data endpoint
+                const emailResponse = await fetch('/api/recent-summaries');
+                const emailData = await emailResponse.json();
+                
+                // Update debug info
+                document.getElementById('debugInfo').innerHTML = `
+                    <strong>Connection Test Results:</strong><br>
+                    ✅ App Status: ${debugData.status}<br>
+                    ✅ Stats Endpoint: Working (${statsResponse.status})<br>
+                    ✅ Email Endpoint: Working (${emailResponse.status})<br>
+                    📧 Emails Found: ${emailData.length || 0}<br>
+                    🕒 Last Check: ${new Date().toLocaleTimeString()}
+                `;
+                
+                showNotification('✅ All connections working!', 'success');
+                
+            } catch (error) {
+                console.error('Connection test failed:', error);
+                document.getElementById('debugInfo').innerHTML = `
+                    <strong>Connection Issues:</strong><br>
+                    ❌ Error: ${error.message}<br>
+                    🔗 Check browser console (F12) for details<br>
+                    🕒 Last Check: ${new Date().toLocaleTimeString()}
+                `;
+                showNotification('❌ Connection test failed', 'error');
+            }
+        }
+        
         async function loadDashboardData() {
             try {
+                console.log('Loading dashboard data...');
+                
                 // Load stats
                 const statsResponse = await fetch('/api/stats');
+                if (!statsResponse.ok) {
+                    throw new Error(`Stats API error: ${statsResponse.status}`);
+                }
                 const stats = await statsResponse.json();
                 updateStats(stats);
                 
-                // Load email data for the table - USING THE UPDATED ENDPOINT
+                // Load email data for the table
                 const emailResponse = await fetch('/api/recent-summaries');
+                if (!emailResponse.ok) {
+                    throw new Error(`Email API error: ${emailResponse.status}`);
+                }
                 const emailData = await emailResponse.json();
                 updateEmailTable(emailData);
                 
@@ -356,10 +428,23 @@
                 document.getElementById('lastUpdated').textContent = 
                     'Last updated: ' + new Date().toLocaleTimeString();
                 
+                console.log('Dashboard data loaded successfully');
+                
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
                 document.getElementById('statusIndicator').className = 'status-indicator status-inactive';
                 document.getElementById('statusText').textContent = 'Connection Error';
+                
+                // Show error in table
+                const tableBody = document.getElementById('emailTableBody');
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="no-data">
+                            ❌ Error loading data: ${error.message}<br>
+                            Check if the server is running and try refreshing.
+                        </td>
+                    </tr>
+                `;
             }
         }
         
@@ -392,7 +477,8 @@
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="5" class="no-data">
-                            No email summaries available. Run the summary process to generate reports.
+                            No email summaries available yet.<br>
+                            Click "Run Summary Now" to process emails or wait for the scheduled run.
                         </td>
                     </tr>
                 `;
@@ -467,8 +553,7 @@
         
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
-            notification.className = 'notification';
-            notification.style.background = type === 'error' ? '#ef4444' : '#10b981';
+            notification.className = `notification ${type === 'error' ? 'error' : ''}`;
             notification.textContent = message;
             document.body.appendChild(notification);
             
@@ -486,13 +571,13 @@
                         document.body.removeChild(notification);
                     }
                 }, 300);
-            }, 3000);
+            }, 5000);
         }
         
         function startPollingForUpdates() {
             // Poll every 10 seconds for 5 minutes
             let attempts = 0;
-            const maxAttempts = 30; // 5 minutes
+            const maxAttempts = 30;
             
             const pollInterval = setInterval(() => {
                 attempts++;
@@ -504,7 +589,6 @@
                 }
             }, 10000);
             
-            // Also clear after 5 minutes
             setTimeout(() => {
                 clearInterval(pollInterval);
             }, 300000);
