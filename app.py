@@ -1,3 +1,4 @@
+
 from docx import Document
 from datetime import datetime, timedelta
 import smtplib
@@ -690,3 +691,38 @@ if __name__ == "__main__":
         # Web server mode
         print("🌐 Starting web server...")
         app.run(host='0.0.0.0', port=5000, debug=False)
+# Add these debug routes to your app.py
+
+@app.route('/debug')
+def debug_info():
+    """Debug endpoint to check if app is working"""
+    return jsonify({
+        "status": "App is running",
+        "timestamp": datetime.now().isoformat(),
+        "environment_variables_set": {
+            "DEEPSEEK_API_KEY": bool(os.getenv('DEEPSEEK_API_KEY')),
+            "SOURCE_EMAIL": bool(os.getenv('SOURCE_EMAIL')),
+            "SOURCE_PASSWORD": bool(os.getenv('SOURCE_PASSWORD'))
+        }
+    })
+
+@app.route('/test-dashboard')
+def test_dashboard():
+    """Test dashboard with sample data"""
+    sample_data = [
+        {
+            "number": 1,
+            "from": "test@jubalandstate.so",
+            "to": "archives@jubalandstate.so",
+            "subject": "Test Email 1",
+            "summary": "This is a test summary to verify the dashboard is working correctly."
+        },
+        {
+            "number": 2,
+            "from": "admin@jubalandstate.so",
+            "to": "archives@jubalandstate.so",
+            "subject": "Test Email 2", 
+            "summary": "Another test email to confirm the table display is functioning properly."
+        }
+    ]
+    return jsonify(sample_data)
