@@ -1,10 +1,5 @@
 from docx import Document
 from datetime import datetime, timedelta
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
 import imaplib
 import email
 from email.header import decode_header
@@ -41,26 +36,7 @@ def dashboard():
     """Main dashboard page"""
     try:
         print("📊 Serving dashboard page...")
-        
-        # Check if template file exists
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        template_path = os.path.join(current_dir, 'templates', 'dashboard.html')
-        
-        if not os.path.exists(template_path):
-            return f"""
-            <html>
-                <body style="font-family: Arial, sans-serif; padding: 40px;">
-                    <h1>❌ Template File Missing</h1>
-                    <p><strong>Expected path:</strong> {template_path}</p>
-                    <p><strong>Current directory:</strong> {current_dir}</p>
-                    <p><strong>Files in current directory:</strong> {', '.join(os.listdir(current_dir))}</p>
-                    <p>Please make sure the 'templates' folder exists and contains 'dashboard.html'</p>
-                </body>
-            </html>
-            """, 500
-            
         return render_template('dashboard.html')
-        
     except Exception as e:
         return f"""
         <html>
@@ -133,7 +109,6 @@ def api_home():
         "endpoints": {
             "dashboard": "/dashboard",
             "test_page": "/test-html", 
-            "trigger": "/api/trigger-summary",
             "health": "/health",
             "stats": "/api/stats",
             "recent_summaries": "/api/recent-summaries",
@@ -461,7 +436,13 @@ class EmailSummarizerAgent:
             # Process ALL emails
             for email_id in email_ids:
                 try:
-                    status, msg_data = mail.fetch(email_id, "(RFC822)")
+                    # Convert email_id to string if it's bytes
+                    if isinstance(email_id, bytes):
+                        email_id_str = email_id.decode('utf-8')
+                    else:
+                        email_id_str = str(email_id)
+                        
+                    status, msg_data = mail.fetch(email_id_str, "(RFC822)")
                     if status != 'OK':
                         continue
                         
@@ -751,13 +732,10 @@ class EmailSummarizerAgent:
             # Step 3: Store the processed emails and summaries for the dashboard
             storage_success = store_email_data_for_dashboard(emails_data, all_summaries)
             
-            # Step 4: Create Word document with ALL emails (optional - for download)
-            word_file = self.create_word_document(emails_data, all_summaries)
-            
-            # Step 5: Save run statistics
+            # Step 4: Save run statistics
             save_run_stats(len(emails_data), len(all_summaries))
             
-            # Step 6: VERIFY DATA STORAGE
+            # Step 5: VERIFY DATA STORAGE
             print(f"\n{'='*60}")
             print("VERIFYING DATA STORAGE FOR DASHBOARD...")
             print(f"{'='*60}")
@@ -838,7 +816,7 @@ def save_run_stats(total_emails, processed_emails):
         print(f"❌ Error saving run stats: {e}")
 
 def store_email_data_for_dashboard(emails_data, all_summaries):
-    """Store processed email data for dashboard display"""
+    """Store processed email data for dashboard display - FIXED VERSION"""
     try:
         db_path = get_db_path()
         print(f"📊 Starting to store {len(emails_data)} emails for dashboard at: {db_path}")
@@ -849,6 +827,8 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
         
         # Create new run entry
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        success_rate = (len(all_summaries) / len(emails_data) * 100) if emails_data else 0
+        
         c.execute('''
             INSERT INTO summary_runs 
             (run_date, total_emails, processed_emails, success_rate, status)
@@ -857,7 +837,7 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
             current_time,
             len(emails_data),
             len(all_summaries),
-            (len(all_summaries) / len(emails_data) * 100) if emails_data else 0,
+            success_rate,
             'completed'
         ))
         
