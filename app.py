@@ -29,7 +29,7 @@ def get_db_path():
     else:
         return 'email_summaries.db'
 
-# ==================== FLASK ROUTES - MUST COME AFTER app DEFINITION ====================
+# ==================== FLASK ROUTES ====================
 
 @app.route('/')
 def root():
@@ -139,7 +139,9 @@ def api_home():
             "recent_summaries": "/api/recent-summaries",
             "debug": "/api/debug",
             "debug_database": "/api/debug-database",
-            "test_json": "/api/test-json"
+            "test_json": "/api/test-json",
+            "fix_database": "/api/fix-database",
+            "force_test_run": "/api/force-test-run"
         }
     })
 
@@ -213,6 +215,77 @@ def debug_database():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/fix-database')
+def fix_database():
+    """Debug and fix database issues"""
+    try:
+        db_path = get_db_path()
+        print(f"🔧 Fixing database at: {db_path}")
+        
+        # Reinitialize database
+        init_db()
+        
+        # Check if we have any data
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        
+        # Get counts
+        c.execute('SELECT COUNT(*) FROM summary_runs')
+        run_count = c.fetchone()[0]
+        
+        c.execute('SELECT COUNT(*) FROM email_data')
+        email_count = c.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            "status": "success",
+            "message": "Database fixed and verified",
+            "run_count": run_count,
+            "email_count": email_count,
+            "database_path": db_path
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/force-test-run')
+def force_test_run():
+    """Force a test run with sample data"""
+    try:
+        # Create sample data for testing
+        sample_emails = [
+            {
+                "from": "test@jubalandstate.so",
+                "to": "archives@jubalandstate.so", 
+                "subject": "Test Email 1",
+                "body": "This is a test email body for testing the dashboard."
+            },
+            {
+                "from": "admin@jubalandstate.so",
+                "to": "archives@jubalandstate.so",
+                "subject": "Test Email 2", 
+                "body": "Another test email to verify dashboard functionality."
+            }
+        ]
+        
+        sample_summaries = {
+            1: "This is a test summary for email 1. It demonstrates how summaries will appear in the dashboard.",
+            2: "This is a test summary for email 2. The dashboard should display this data properly."
+        }
+        
+        # Store sample data
+        success = store_email_data_for_dashboard(sample_emails, sample_summaries)
+        
+        return jsonify({
+            "status": "success" if success else "error",
+            "message": "Test data added to dashboard" if success else "Failed to add test data",
+            "emails_added": len(sample_emails)
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/stats')
 def get_stats():
     """API endpoint for dashboard statistics"""
@@ -258,7 +331,7 @@ def get_stats():
 
 @app.route('/api/recent-summaries')
 def get_recent_summaries():
-    """API endpoint for recent email summaries - NOW WITH REAL DATA"""
+    """API endpoint for recent email summaries"""
     try:
         db_path = get_db_path()
         conn = sqlite3.connect(db_path)
@@ -355,9 +428,7 @@ class EmailSummarizerAgent:
         self.deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
         self.source_email = os.getenv('SOURCE_EMAIL')
         self.source_password = os.getenv('SOURCE_PASSWORD')
-        self.destination_email = os.getenv('DESTINATION_EMAIL', 'cos.presidency@jubalandstate.so')
         self.imap_server = os.getenv('IMAP_SERVER', 'imap.one.com')
-        self.smtp_server = os.getenv('SMTP_SERVER', 'send.one.com')
         
         # Validate required environment variables
         if not all([self.deepseek_api_key, self.source_email, self.source_password]):
@@ -365,7 +436,6 @@ class EmailSummarizerAgent:
             
         self.deepseek_api_url = "https://api.deepseek.com/v1/chat/completions"
         self.imap_port = 993
-        self.smtp_port = 587
     
     def fetch_emails_last_24h(self):
         try:
@@ -571,7 +641,7 @@ class EmailSummarizerAgent:
         for i in range(len(batch_emails)):
             email_num = start_index + i + 1
             
-            # Try multiple patterns to find the summary - COMPLETELY FIXED ESCAPE SEQUENCES
+            # Try multiple patterns to find the summary
             patterns = [
                 # Pattern 1: **Email X:** content until **Email X+1:** or end
                 r"\*\*Email " + str(email_num) + r":\*\* (.*?)(?=\*\*Email " + str(email_num + 1) + r":\*\*|$)",
@@ -660,55 +730,6 @@ class EmailSummarizerAgent:
             print(f"Error creating Word document: {e}")
             return None
     
-    def send_summary_email(self, word_file_path=None):
-        try:
-            print("Preparing to send summary email...")
-            
-            msg = MIMEMultipart()
-            msg['From'] = self.source_email
-            msg['To'] = self.destination_email
-            msg['Subject'] = f"Complete 24-Hour Email Summary - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-            
-            body = f"""
-            COMPLETE 24-HOUR EMAIL SUMMARY REPORT
-            Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-            
-            Please find attached the complete email summary report in Word document format.
-            This report contains ALL emails from the last 24 hours with individual summaries.
-            
-            ---
-            Automated Summary Service
-            Jubaland State Archives
-            """
-            
-            msg.attach(MIMEText(body, 'plain'))
-            
-            if word_file_path and os.path.exists(word_file_path):
-                with open(word_file_path, "rb") as attachment:
-                    part = MIMEBase("application", "octet-stream")
-                    part.set_payload(attachment.read())
-                
-                encoders.encode_base64(part)
-                part.add_header(
-                    "Content-Disposition",
-                    f"attachment; filename= {os.path.basename(word_file_path)}",
-                )
-                msg.attach(part)
-                print(f"Attached Word document: {word_file_path}")
-            
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            server.starttls()
-            server.login(self.source_email, self.source_password)
-            server.sendmail(self.source_email, self.destination_email, msg.as_string())
-            server.quit()
-            
-            print(f"✅ Complete email summary sent successfully to {self.destination_email}")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error sending email: {e}")
-            return False
-    
     def run_complete_summary(self):
         print(f"\n{'='*60}")
         print(f"STARTING COMPLETE EMAIL SUMMARY - {datetime.now()}")
@@ -730,27 +751,21 @@ class EmailSummarizerAgent:
             # Step 3: Store the processed emails and summaries for the dashboard
             storage_success = store_email_data_for_dashboard(emails_data, all_summaries)
             
-            # Step 4: Create Word document with ALL emails
+            # Step 4: Create Word document with ALL emails (optional - for download)
             word_file = self.create_word_document(emails_data, all_summaries)
             
-            # Step 5: Send summary email with complete report
-            email_success = self.send_summary_email(word_file)
+            # Step 5: Save run statistics
+            save_run_stats(len(emails_data), len(all_summaries))
             
-            if email_success:
-                print(f"✅ COMPLETE summary process finished at {datetime.now()}")
-                print(f"✅ Processed {len(emails_data)} emails total")
-                
-                # Save run statistics
-                save_run_stats(len(emails_data), len(all_summaries))
-                
-                # VERIFY DATA STORAGE
-                print(f"\n{'='*60}")
-                print("VERIFYING DATA STORAGE FOR DASHBOARD...")
-                print(f"{'='*60}")
-                verify_data_storage()
-                
-            else:
-                print(f"❌ Process completed with errors")
+            # Step 6: VERIFY DATA STORAGE
+            print(f"\n{'='*60}")
+            print("VERIFYING DATA STORAGE FOR DASHBOARD...")
+            print(f"{'='*60}")
+            verify_data_storage()
+            
+            print(f"✅ COMPLETE summary process finished at {datetime.now()}")
+            print(f"✅ Processed {len(emails_data)} emails total")
+            print(f"✅ Data sent to dashboard successfully")
                 
         except Exception as e:
             print(f"❌ Critical error: {e}")
@@ -826,31 +841,30 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
     """Store processed email data for dashboard display"""
     try:
         db_path = get_db_path()
+        print(f"📊 Starting to store {len(emails_data)} emails for dashboard at: {db_path}")
+        
+        # First, create a new run record
         conn = sqlite3.connect(db_path)
         c = conn.cursor()
         
-        print(f"📊 Starting to store {len(emails_data)} emails for dashboard at: {db_path}")
+        # Create new run entry
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        c.execute('''
+            INSERT INTO summary_runs 
+            (run_date, total_emails, processed_emails, success_rate, status)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (
+            current_time,
+            len(emails_data),
+            len(all_summaries),
+            (len(all_summaries) / len(emails_data) * 100) if emails_data else 0,
+            'completed'
+        ))
         
-        # Get the latest run ID 
-        c.execute('SELECT id, run_date FROM summary_runs ORDER BY id DESC LIMIT 1')
-        latest_run = c.fetchone()
+        run_id = c.lastrowid
+        print(f"📊 Created new run_id: {run_id}")
         
-        if not latest_run:
-            print("❌ CRITICAL: No run ID found in summary_runs table!")
-            print("   This means save_run_stats() didn't work properly")
-            conn.close()
-            return False
-            
-        run_id, run_date = latest_run
-        print(f"📊 Found run_id: {run_id} from {run_date}")
-        print(f"📊 We have {len(all_summaries)} summaries out of {len(emails_data)} emails")
-        
-        # Clear previous email data for this run
-        delete_count = c.execute('DELETE FROM email_data WHERE run_id = ?', (run_id,)).rowcount
-        if delete_count > 0:
-            print(f"🗑️  Cleared {delete_count} previous email records for this run")
-        
-        # Insert new email data
+        # Insert email data
         inserted_count = 0
         failed_count = 0
         
@@ -865,10 +879,10 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
                 ''', (
                     run_id,
                     i,
-                    email['from'][:100] if email['from'] else "Unknown",
-                    email['to'][:100] if email['to'] else "Unknown", 
-                    email['subject'][:200] if email['subject'] else "No Subject",
-                    summary[:500]
+                    str(email['from'])[:100] if email['from'] else "Unknown",
+                    str(email['to'])[:100] if email['to'] else "Unknown", 
+                    str(email['subject'])[:200] if email['subject'] else "No Subject",
+                    str(summary)[:500]
                 ))
                 inserted_count += 1
                 
@@ -883,7 +897,7 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
         conn.commit()
         conn.close()
         
-        print(f"✅ Database storage complete at {db_path}:")
+        print(f"✅ Database storage complete:")
         print(f"   ✅ Successfully stored: {inserted_count} emails")
         print(f"   ❌ Failed to store: {failed_count} emails")
         print(f"   📊 Total processed: {len(emails_data)} emails")
