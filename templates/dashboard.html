@@ -543,10 +543,10 @@
             
             let tableHTML = '';
             
-            emailData.forEach((email) => {
+            emailData.forEach((email, index) => {
                 tableHTML += `
                     <tr>
-                        <td class="email-number">${email.number || ''}</td>
+                        <td class="email-number">${index + 1}</td>
                         <td class="email-sender">${escapeHtml(email.from || 'Unknown')}</td>
                         <td class="email-receiver">${escapeHtml(email.to || 'Unknown')}</td>
                         <td class="email-subject">${escapeHtml(email.subject || 'No Subject')}</td>
