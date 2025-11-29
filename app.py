@@ -271,7 +271,7 @@ def get_stats():
         
         c.execute('''
             SELECT * FROM summary_runs 
-            ORDER BY run_date DESC 
+            ORDER BY id DESC 
             LIMIT 1
         ''')
         
@@ -321,8 +321,9 @@ def get_recent_summaries():
             return jsonify([])  # No data yet
         
         run_id = latest_run[0]
+        print(f"🔍 Fetching emails for run_id: {run_id}")
         
-        # Get email data for the latest run - FIXED COLUMN NAMES
+        # Get email data for the latest run
         c.execute('''
             SELECT email_number, sender, receiver, subject, summary 
             FROM email_data 
@@ -332,11 +333,14 @@ def get_recent_summaries():
         ''', (run_id,))
         
         email_data = []
-        for row in c.fetchall():
+        rows = c.fetchall()
+        print(f"📧 Found {len(rows)} email records for run_id {run_id}")
+        
+        for row in rows:
             email_data.append({
                 "number": row[0],
-                "from": row[1],  # Changed from 'sender' to 'from' for frontend
-                "to": row[2],    # Changed from 'receiver' to 'to' for frontend
+                "from": row[1],
+                "to": row[2],
                 "subject": row[3],
                 "summary": row[4]
             })
@@ -735,6 +739,7 @@ class EmailSummarizerAgent:
             print(f"📝 Generated {len(all_summaries)} summaries out of {len(emails_data)} emails")
             
             # Step 3: Store the processed emails and summaries for the dashboard
+            # This function now handles BOTH creating the run AND storing emails
             storage_success = store_email_data_for_dashboard(emails_data, all_summaries)
             
             if storage_success:
@@ -742,10 +747,7 @@ class EmailSummarizerAgent:
             else:
                 print("❌ Failed to store email data for dashboard")
             
-            # Step 4: Save run statistics
-            save_run_stats(len(emails_data), len(all_summaries))
-            
-            # Step 5: VERIFY DATA STORAGE
+            # Step 4: VERIFY DATA STORAGE
             print(f"\n{'='*60}")
             print("VERIFYING DATA STORAGE FOR DASHBOARD...")
             print(f"{'='*60}")
@@ -800,33 +802,6 @@ def init_db():
     conn.close()
     print(f"✅ Database initialized at: {db_path}")
 
-def save_run_stats(total_emails, processed_emails):
-    """Save run statistics to database"""
-    try:
-        db_path = get_db_path()
-        conn = sqlite3.connect(db_path)
-        c = conn.cursor()
-        
-        success_rate = (processed_emails / total_emails * 100) if total_emails > 0 else 0
-        
-        c.execute('''
-            INSERT INTO summary_runs 
-            (run_date, total_emails, processed_emails, success_rate, status)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            total_emails,
-            processed_emails,
-            success_rate,
-            'completed'
-        ))
-        
-        conn.commit()
-        conn.close()
-        print(f"✅ Run statistics saved to database at: {db_path}")
-    except Exception as e:
-        print(f"❌ Error saving run stats: {e}")
-
 def store_email_data_for_dashboard(emails_data, all_summaries):
     """Store processed email data for dashboard display - FIXED VERSION"""
     try:
@@ -856,7 +831,7 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
         run_id = c.lastrowid
         print(f"📊 Created new run_id: {run_id}")
         
-        # Insert email data - FIXED: Using correct column names that match frontend expectations
+        # Insert email data
         inserted_count = 0
         failed_count = 0
         
