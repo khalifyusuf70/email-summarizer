@@ -306,7 +306,7 @@ def get_stats():
 
 @app.route('/api/recent-summaries')
 def get_recent_summaries():
-    """API endpoint for recent email summaries"""
+    """API endpoint for recent email summaries - FIXED VERSION"""
     try:
         db_path = get_db_path()
         conn = sqlite3.connect(db_path)
@@ -317,11 +317,12 @@ def get_recent_summaries():
         latest_run = c.fetchone()
         
         if not latest_run:
+            print("📭 No runs found in database")
             return jsonify([])  # No data yet
         
         run_id = latest_run[0]
         
-        # Get email data for the latest run
+        # Get email data for the latest run - FIXED COLUMN NAMES
         c.execute('''
             SELECT email_number, sender, receiver, subject, summary 
             FROM email_data 
@@ -334,18 +335,20 @@ def get_recent_summaries():
         for row in c.fetchall():
             email_data.append({
                 "number": row[0],
-                "from": row[1],
-                "to": row[2],
+                "from": row[1],  # Changed from 'sender' to 'from' for frontend
+                "to": row[2],    # Changed from 'receiver' to 'to' for frontend
                 "subject": row[3],
                 "summary": row[4]
             })
         
         conn.close()
         
+        print(f"📧 Returning {len(email_data)} emails for dashboard table")
         return jsonify(email_data)
         
     except Exception as e:
-        print(f"Error getting recent summaries: {e}")
+        print(f"❌ Error getting recent summaries: {e}")
+        print(f"Full traceback: {traceback.format_exc()}")
         # Fallback to mock data if database is not available
         return jsonify(get_fallback_email_data())
 
@@ -729,8 +732,15 @@ class EmailSummarizerAgent:
             # Step 2: Summarize ALL emails in batches
             all_summaries = self.summarize_emails_in_batches(emails_data)
             
+            print(f"📝 Generated {len(all_summaries)} summaries out of {len(emails_data)} emails")
+            
             # Step 3: Store the processed emails and summaries for the dashboard
             storage_success = store_email_data_for_dashboard(emails_data, all_summaries)
+            
+            if storage_success:
+                print("✅ Email data successfully stored for dashboard")
+            else:
+                print("❌ Failed to store email data for dashboard")
             
             # Step 4: Save run statistics
             save_run_stats(len(emails_data), len(all_summaries))
@@ -743,10 +753,12 @@ class EmailSummarizerAgent:
             
             print(f"✅ COMPLETE summary process finished at {datetime.now()}")
             print(f"✅ Processed {len(emails_data)} emails total")
+            print(f"✅ Generated {len(all_summaries)} summaries")
             print(f"✅ Data sent to dashboard successfully")
                 
         except Exception as e:
             print(f"❌ Critical error: {e}")
+            print(f"Full traceback: {traceback.format_exc()}")
 
 # ==================== DATABASE FUNCTIONS ====================
 
@@ -844,7 +856,7 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
         run_id = c.lastrowid
         print(f"📊 Created new run_id: {run_id}")
         
-        # Insert email data
+        # Insert email data - FIXED: Using correct column names that match frontend expectations
         inserted_count = 0
         failed_count = 0
         
@@ -915,12 +927,13 @@ def verify_data_storage():
         print(f"📋 Stored emails for this run: {stored_emails}")
         
         # Get a sample of stored data
-        c.execute('SELECT email_number, sender, subject FROM email_data WHERE run_id = ? LIMIT 3', (run_id,))
+        c.execute('SELECT email_number, sender, receiver, subject, summary FROM email_data WHERE run_id = ? LIMIT 3', (run_id,))
         samples = c.fetchall()
         
         print("📋 Sample stored emails:")
         for sample in samples:
-            print(f"   - #{sample[0]}: From '{sample[1]}' - '{sample[2]}'")
+            print(f"   - #{sample[0]}: From '{sample[1]}' to '{sample[2]}' - '{sample[3]}'")
+            print(f"     Summary: {sample[4][:100]}...")
         
         conn.close()
         
