@@ -323,13 +323,12 @@ def get_recent_summaries():
         run_id = latest_run[0]
         print(f"🔍 Fetching emails for run_id: {run_id}")
         
-        # Get email data for the latest run
+        # Get email data for the latest run - REMOVED THE LIMIT
         c.execute('''
             SELECT email_number, sender, receiver, subject, summary 
             FROM email_data 
             WHERE run_id = ? 
-            ORDER BY email_number 
-            LIMIT 50
+            ORDER BY email_number
         ''', (run_id,))
         
         email_data = []
