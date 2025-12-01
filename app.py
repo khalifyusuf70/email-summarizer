@@ -12,6 +12,8 @@ import logging
 import sqlite3
 import json
 import traceback
+import base64
+from io import BytesIO
 
 # Initialize Flask app FIRST
 app = Flask(__name__)
@@ -182,7 +184,8 @@ def debug_database():
                     "run_id": email[1], 
                     "email_number": email[2],
                     "sender": email[3],
-                    "subject": email[5]
+                    "subject": email[5],
+                    "has_attachment": email[7] if len(email) > 7 else False
                 } for email in sample_emails
             ]
         })
@@ -234,19 +237,21 @@ def force_test_run():
                 "from": "test@jubalandstate.so",
                 "to": "archives@jubalandstate.so", 
                 "subject": "Test Email 1",
-                "body": "This is a test email body for testing the dashboard."
+                "body": "This is a test email body for testing the dashboard.",
+                "has_attachment": False
             },
             {
                 "from": "admin@jubalandstate.so",
                 "to": "archives@jubalandstate.so",
-                "subject": "Test Email 2", 
-                "body": "Another test email to verify dashboard functionality."
+                "subject": "Test Email 2 with Attachment", 
+                "body": "Another test email with attachment to verify dashboard functionality.",
+                "has_attachment": True
             }
         ]
         
         sample_summaries = {
             1: "This is a test summary for email 1. It demonstrates how summaries will appear in the dashboard.",
-            2: "This is a test summary for email 2. The dashboard should display this data properly."
+            2: "This is a test summary for email 2 with attachment. The dashboard should display this data properly with attachment indicator."
         }
         
         # Store sample data
@@ -325,7 +330,7 @@ def get_recent_summaries():
         
         # Get email data for the latest run - REMOVED THE LIMIT
         c.execute('''
-            SELECT email_number, sender, receiver, subject, summary 
+            SELECT email_number, sender, receiver, subject, summary, has_attachment 
             FROM email_data 
             WHERE run_id = ? 
             ORDER BY email_number
@@ -341,7 +346,8 @@ def get_recent_summaries():
                 "from": row[1],
                 "to": row[2],
                 "subject": row[3],
-                "summary": row[4]
+                "summary": row[4],
+                "has_attachment": bool(row[5]) if len(row) > 5 else False
             })
         
         conn.close()
@@ -363,14 +369,16 @@ def get_fallback_email_data():
             "from": "system@jubalandstate.so",
             "to": "archives@jubalandstate.so",
             "subject": "Daily System Report",
-            "summary": "Automated system report showing all services are running normally with 99.8% uptime. No critical issues reported."
+            "summary": "Automated system report showing all services are running normally with 99.8% uptime. No critical issues reported.",
+            "has_attachment": False
         },
         {
             "number": 2,
             "from": "secretary@jubalandstate.so", 
             "to": "archives@jubalandstate.so",
-            "subject": "Meeting Minutes Approval",
-            "summary": "Requesting approval for executive meeting minutes. Key decisions include budget allocation and project timelines."
+            "subject": "Meeting Minutes Approval - Attachment Included",
+            "summary": "Requesting approval for executive meeting minutes. Key decisions include budget allocation and project timelines. [ATTACHMENT: meeting_minutes.pdf]",
+            "has_attachment": True
         }
     ]
 
@@ -459,14 +467,27 @@ class EmailSummarizerAgent:
                     to_ = self.decode_email_header(msg["To"] or msg["Delivered-To"] or "Unknown")
                     date = msg["Date"]
                     
+                    # Skip emails with no subject
+                    if not subject or subject.strip() == "":
+                        print(f"📭 Skipping email with no subject from {from_}")
+                        continue
+                    
+                    # Skip failed delivery emails
+                    if self.is_failed_delivery(subject, from_):
+                        print(f"📭 Skipping failed delivery email: {subject}")
+                        continue
+                    
                     body = self.extract_email_body(msg)
+                    has_attachment = self.has_attachments(msg)
                     
                     emails_data.append({
                         "subject": subject,
                         "from": from_,
                         "to": to_,
                         "date": date,
-                        "body": body[:1000]  # Reduced for token management
+                        "body": body[:1000],  # Reduced for token management
+                        "has_attachment": has_attachment,
+                        "original_message": msg if has_attachment else None
                     })
                     
                     if len(emails_data) % 50 == 0:
@@ -479,12 +500,80 @@ class EmailSummarizerAgent:
             mail.close()
             mail.logout()
             
-            print(f"Successfully processed {len(emails_data)} emails")
+            print(f"Successfully processed {len(emails_data)} emails after filtering")
             return emails_data
             
         except Exception as e:
             print(f"Error fetching emails: {e}")
             return []
+    
+    def is_failed_delivery(self, subject, from_address):
+        """Check if email is a failed delivery notification"""
+        failed_indicators = [
+            "delivery failure",
+            "failed delivery",
+            "undeliverable",
+            "returned mail",
+            "delivery status",
+            "failure notice",
+            "mail delivery failed",
+            "undelivered mail"
+        ]
+        
+        subject_lower = subject.lower()
+        from_lower = from_address.lower() if from_address else ""
+        
+        # Check subject for failure indicators
+        for indicator in failed_indicators:
+            if indicator in subject_lower:
+                return True
+        
+        # Check from address for mailer daemon
+        if "mailer-daemon" in from_lower or "postmaster" in from_lower:
+            return True
+            
+        return False
+    
+    def has_attachments(self, msg):
+        """Check if email has attachments"""
+        if msg.is_multipart():
+            for part in msg.walk():
+                content_disposition = part.get("Content-Disposition", "")
+                if content_disposition and "attachment" in content_disposition:
+                    return True
+                # Also check for filename in content-type
+                content_type = part.get("Content-Type", "")
+                if "name=" in content_type or "filename=" in content_type:
+                    return True
+        return False
+    
+    def extract_attachment_content(self, msg):
+        """Extract and summarize attachment content"""
+        attachment_summaries = []
+        
+        if msg.is_multipart():
+            for part in msg.walk():
+                content_disposition = part.get("Content-Disposition", "")
+                content_type = part.get("Content-Type", "")
+                
+                # Check if this part is an attachment
+                if content_disposition and "attachment" in content_disposition:
+                    filename = part.get_filename()
+                    if filename:
+                        print(f"📎 Found attachment: {filename}")
+                        
+                        # Get file content (for text-based files)
+                        try:
+                            file_content = part.get_payload(decode=True)
+                            if file_content:
+                                # For now, we'll just note the attachment
+                                # In a real implementation, you'd process different file types
+                                attachment_summaries.append(f"[Attachment: {filename}]")
+                        except Exception as e:
+                            print(f"Error processing attachment {filename}: {e}")
+                            attachment_summaries.append(f"[Attachment: {filename} - processing failed]")
+        
+        return attachment_summaries
     
     def decode_email_header(self, header):
         if header:
@@ -565,6 +654,14 @@ class EmailSummarizerAgent:
             emails_text += f"To: {email['to']}\n"
             emails_text += f"Subject: {email['subject']}\n"
             emails_text += f"Date: {email['date']}\n"
+            emails_text += f"Has Attachment: {'Yes' if email['has_attachment'] else 'No'}\n"
+            
+            # If email has attachment, extract attachment info
+            if email['has_attachment']:
+                attachment_info = self.extract_attachment_content(email['original_message'])
+                if attachment_info:
+                    emails_text += f"Attachments: {', '.join(attachment_info)}\n"
+            
             emails_text += f"Content: {email['body'][:200]}...\n\n"
         
         prompt = f"""
@@ -573,6 +670,8 @@ class EmailSummarizerAgent:
         **Email {start_index + 1}:** [One paragraph summary of this email]
         **Email {start_index + 2}:** [One paragraph summary of this email]
         ...and so on for each email.
+
+        IMPORTANT: For emails with attachments, include a brief note about the attachments in the summary.
 
         Make each summary concise but informative, focusing on the main purpose and key points of each email.
         Keep each summary to 2-3 sentences maximum.
@@ -591,7 +690,7 @@ class EmailSummarizerAgent:
             "messages": [
                 {
                     "role": "system", 
-                    "content": "Provide clear, concise individual one-paragraph summaries for each email. Format each summary starting with **Email X:** followed by the paragraph. Keep summaries brief."
+                    "content": "Provide clear, concise individual one-paragraph summaries for each email. For emails with attachments, mention the attachments briefly in the summary. Format each summary starting with **Email X:** followed by the paragraph. Keep summaries brief."
                 },
                 {
                     "role": "user",
@@ -683,7 +782,7 @@ class EmailSummarizerAgent:
             doc.add_paragraph(f"Total Emails Processed: {len(emails_data)}")
             doc.add_paragraph()
             
-            table = doc.add_table(rows=1, cols=5)
+            table = doc.add_table(rows=1, cols=6)
             table.style = 'Table Grid'
             
             # Header row
@@ -692,7 +791,8 @@ class EmailSummarizerAgent:
             hdr_cells[1].text = 'Sender'
             hdr_cells[2].text = 'Receiver'
             hdr_cells[3].text = 'Email Subject'
-            hdr_cells[4].text = 'Summary in a paragraph'
+            hdr_cells[4].text = 'Has Attachment'
+            hdr_cells[5].text = 'Summary in a paragraph'
             
             # Data rows for ALL emails
             for i, email in enumerate(emails_data, 1):
@@ -701,10 +801,11 @@ class EmailSummarizerAgent:
                 row_cells[1].text = email['from'][:40] if email['from'] else "Unknown"
                 row_cells[2].text = email['to'][:40] if email['to'] else "Unknown"
                 row_cells[3].text = email['subject'][:80] if email['subject'] else "No Subject"
+                row_cells[4].text = "Yes" if email['has_attachment'] else "No"
                 
                 # Get individual summary for this email
                 summary = all_summaries.get(i, "Summary being processed...")
-                row_cells[4].text = summary
+                row_cells[5].text = summary
             
             print(f"✅ Word document created with {len(emails_data)} emails")
             filename = f"Complete_Email_Summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
@@ -723,14 +824,14 @@ class EmailSummarizerAgent:
         print(f"{'='*60}")
         
         try:
-            # Step 1: Fetch ALL emails from last 24 hours
+            # Step 1: Fetch ALL emails from last 24 hours (with filtering)
             emails_data = self.fetch_emails_last_24h()
             
             if not emails_data:
                 print("No emails to process")
                 return
                 
-            print(f"📧 Processing {len(emails_data)} emails...")
+            print(f"📧 Processing {len(emails_data)} emails after filtering...")
             
             # Step 2: Summarize ALL emails in batches
             all_summaries = self.summarize_emails_in_batches(emails_data)
@@ -738,7 +839,6 @@ class EmailSummarizerAgent:
             print(f"📝 Generated {len(all_summaries)} summaries out of {len(emails_data)} emails")
             
             # Step 3: Store the processed emails and summaries for the dashboard
-            # This function now handles BOTH creating the run AND storing emails
             storage_success = store_email_data_for_dashboard(emails_data, all_summaries)
             
             if storage_success:
@@ -792,6 +892,7 @@ def init_db():
             receiver TEXT,
             subject TEXT,
             summary TEXT,
+            has_attachment BOOLEAN DEFAULT 0,
             processed_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (run_id) REFERENCES summary_runs (id)
         )
@@ -836,19 +937,21 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
         
         for i, email in enumerate(emails_data, 1):
             summary = all_summaries.get(i, "Summary being processed...")
+            has_attachment = email.get('has_attachment', False)
             
             try:
                 c.execute('''
                     INSERT INTO email_data 
-                    (run_id, email_number, sender, receiver, subject, summary)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    (run_id, email_number, sender, receiver, subject, summary, has_attachment)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     run_id,
                     i,
                     str(email['from'])[:100] if email['from'] else "Unknown",
                     str(email['to'])[:100] if email['to'] else "Unknown", 
                     str(email['subject'])[:200] if email['subject'] else "No Subject",
-                    str(summary)[:500]
+                    str(summary)[:500],
+                    has_attachment
                 ))
                 inserted_count += 1
                 
@@ -867,6 +970,7 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
         print(f"   ✅ Successfully stored: {inserted_count} emails")
         print(f"   ❌ Failed to store: {failed_count} emails")
         print(f"   📊 Total processed: {len(emails_data)} emails")
+        print(f"   📎 Emails with attachments: {sum(1 for e in emails_data if e.get('has_attachment', False))}")
         
         return inserted_count > 0
         
@@ -898,15 +1002,21 @@ def verify_data_storage():
         c.execute('SELECT COUNT(*) FROM email_data WHERE run_id = ?', (run_id,))
         stored_emails = c.fetchone()[0]
         
+        # Check emails with attachments
+        c.execute('SELECT COUNT(*) FROM email_data WHERE run_id = ? AND has_attachment = 1', (run_id,))
+        emails_with_attachments = c.fetchone()[0]
+        
         print(f"📋 Stored emails for this run: {stored_emails}")
+        print(f"📎 Emails with attachments: {emails_with_attachments}")
         
         # Get a sample of stored data
-        c.execute('SELECT email_number, sender, receiver, subject, summary FROM email_data WHERE run_id = ? LIMIT 3', (run_id,))
+        c.execute('SELECT email_number, sender, receiver, subject, summary, has_attachment FROM email_data WHERE run_id = ? LIMIT 3', (run_id,))
         samples = c.fetchall()
         
         print("📋 Sample stored emails:")
         for sample in samples:
-            print(f"   - #{sample[0]}: From '{sample[1]}' to '{sample[2]}' - '{sample[3]}'")
+            attachment_indicator = " 📎" if sample[5] else ""
+            print(f"   - #{sample[0]}: From '{sample[1]}' to '{sample[2]}' - '{sample[3]}'{attachment_indicator}")
             print(f"     Summary: {sample[4][:100]}...")
         
         conn.close()
