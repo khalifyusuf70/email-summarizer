@@ -12,175 +12,148 @@
         }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #2d3748;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #333;
             line-height: 1.6;
-            min-height: 100vh;
         }
         
         .dashboard {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 30px;
+            padding: 20px;
         }
         
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
-            padding: 35px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .header-content h1 {
-            font-size: 2.5em;
-            font-weight: 700;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e1e5e9;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
         
         .stat-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 30px 25px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid #4f46e5;
         }
         
         .stat-number {
-            font-size: 2.8em;
-            font-weight: 800;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin: 15px 0;
-            line-height: 1;
+            font-size: 2em;
+            font-weight: bold;
+            color: #4f46e5;
+            margin: 10px 0;
         }
         
         .stat-label {
-            color: #718096;
-            font-size: 0.95em;
+            color: #666;
+            font-size: 0.9em;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
         
         .controls {
             display: flex;
             gap: 15px;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             flex-wrap: wrap;
         }
         
         .btn {
-            padding: 15px 30px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 12px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s ease;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            font-size: 14px;
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: #4f46e5;
             color: white;
         }
         
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 35px rgba(79, 70, 229, 0.4);
+            background: #4338ca;
         }
         
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.9);
-            color: #4a5568;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: #6b7280;
+            color: white;
         }
         
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 1);
-            transform: translateY(-2px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            background: #4b5563;
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
         }
         
         .status-indicator {
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 24px;
-            border-radius: 50px;
-            font-size: 0.95em;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
             font-weight: 600;
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
         
         .status-active {
-            color: #059669;
+            background: #dcfce7;
+            color: #166534;
         }
         
         .status-waiting {
-            color: #d97706;
+            background: #fef3c7;
+            color: #92400e;
         }
         
         .status-inactive {
+            background: #fecaca;
             color: #dc2626;
         }
         
         .loading {
-            opacity: 0.7;
+            opacity: 0.6;
             pointer-events: none;
         }
         
         .status-dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        
-        .status-active .status-dot {
-            background: #10b981;
+            background: #166534;
         }
         
         .status-waiting .status-dot {
@@ -188,86 +161,52 @@
         }
         
         .status-inactive .status-dot {
-            background: #ef4444;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(0.95); opacity: 0.7; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(0.95); opacity: 0.7; }
+            background: #dc2626;
         }
         
         .summary-table-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            margin-bottom: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .table-header {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: #4f46e5;
             color: white;
-            padding: 25px 30px;
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-        
-        .table-header h3 {
-            margin: 0;
-            font-size: 1.4em;
-            font-weight: 600;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
         .email-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            border-collapse: collapse;
         }
         
         .email-table th {
             background: #f8fafc;
-            padding: 20px 16px;
+            padding: 15px 12px;
             text-align: left;
-            font-weight: 700;
-            color: #2d3748;
-            border-bottom: 2px solid #e2e8f0;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
             font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
         }
         
         .email-table td {
-            padding: 18px 16px;
-            border-bottom: 1px solid #f1f5f9;
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
             vertical-align: top;
             font-size: 14px;
-            transition: background-color 0.2s ease;
         }
         
-        .email-table tr {
-            transition: all 0.3s ease;
-        }
-        
-        .email-table tr:not(.row-attachment):hover {
-            background: #f8fafc;
-            transform: translateX(4px);
-        }
-        
-        .row-attachment {
-            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-            border-left: 4px solid #0ea5e9;
-        }
-        
-        .row-attachment:hover {
-            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-            transform: translateX(4px);
+        .email-table tr:hover {
+            background: #f9fafb;
         }
         
         .email-table tr:last-child td {
@@ -275,177 +214,171 @@
         }
         
         .email-number {
-            font-weight: 700;
+            font-weight: 600;
             color: #4f46e5;
             text-align: center;
-            width: 70px;
-            font-size: 1.1em;
+            width: 60px;
         }
         
         .email-sender, .email-receiver {
-            width: 220px;
-            max-width: 220px;
+            width: 200px;
+            max-width: 200px;
+            word-wrap: break-word;
+        }
+        
+        .email-subject {
+            width: 250px;
+            max-width: 250px;
             word-wrap: break-word;
             font-weight: 500;
         }
         
-        .email-subject {
-            width: 280px;
-            max-width: 280px;
-            word-wrap: break-word;
-            font-weight: 600;
-            color: #1a202c;
-        }
-        
         .email-summary {
-            min-width: 450px;
-            line-height: 1.6;
-            color: #4a5568;
-        }
-        
-        .attachment-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(135deg, #0ea5e9, #0369a1);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 600;
-            margin-left: 8px;
-            vertical-align: middle;
+            min-width: 400px;
+            line-height: 1.5;
+            color: #6b7280;
         }
         
         .no-data {
             text-align: center;
-            padding: 60px 40px;
-            color: #718096;
+            padding: 40px;
+            color: #6b7280;
             font-style: italic;
-            font-size: 1.1em;
         }
         
         .last-updated {
-            color: #a0aec0;
-            font-size: 0.9em;
-            margin-top: 8px;
+            color: #9ca3af;
+            font-size: 0.85em;
+            margin-top: 10px;
         }
         
         .refresh-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 10px 20px;
-            border-radius: 10px;
+            background: transparent;
+            border: 1px solid #d1d5db;
+            padding: 8px 16px;
+            border-radius: 6px;
             cursor: pointer;
-            color: white;
+            color: #374151;
             font-size: 0.9em;
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
         
         .refresh-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-1px);
+            background: #f3f4f6;
         }
         
         .notification {
             position: fixed;
-            top: 30px;
-            right: 30px;
-            background: linear-gradient(135deg, #10b981, #059669);
+            top: 20px;
+            right: 20px;
+            background: #10b981;
             color: white;
-            padding: 16px 24px;
-            border-radius: 12px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             z-index: 1000;
-            font-weight: 600;
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            transform: translateX(400px);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            transform: translateX(100%);
             opacity: 0;
             max-width: 400px;
         }
         
         .notification.error {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
+            background: #ef4444;
         }
         
         .notification.info {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: #3b82f6;
         }
         
-        .debug-info {
-            background: rgba(255, 255, 255, 0.9);
+        .notification.warning {
+            background: #f59e0b;
+        }
+        
+        .debug-panel {
+            background: #f3f4f6;
             padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-            font-size: 13px;
-            border-left: 4px solid #4f46e5;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #6b7280;
         }
         
-        .debug-info a {
+        .debug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #d1d5db;
+        }
+        
+        .debug-content {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            background: #1f2937;
+            color: #d1d5db;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .debug-content pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .debug-links {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .debug-links a {
             color: #4f46e5;
             text-decoration: none;
-            font-weight: 600;
+            font-size: 0.9em;
+            padding: 4px 8px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
         }
         
-        .debug-info a:hover {
+        .debug-links a:hover {
+            background: #f3f4f6;
             text-decoration: underline;
         }
-        
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .dashboard {
-                padding: 20px;
-            }
-            
-            .header {
-                flex-direction: column;
-                gap: 20px;
-                text-align: center;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .controls {
-                justify-content: center;
-            }
-            
-            .email-table {
-                font-size: 0.9em;
-            }
-            
-            .email-sender, .email-receiver {
-                width: 150px;
-                max-width: 150px;
-            }
-            
-            .email-subject {
-                width: 200px;
-                max-width: 200px;
-            }
-            
-            .email-summary {
-                min-width: 300px;
-            }
-        }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="dashboard">
-        <div class="debug-info" id="debugInfo">
-            Loading debug information...
+        <div class="debug-panel">
+            <div class="debug-header">
+                <h3 style="margin: 0; color: #374151;">System Diagnostics</h3>
+                <button class="btn btn-secondary" onclick="runDiagnostics()" style="padding: 6px 12px; font-size: 12px;">
+                    🔧 Run Diagnostics
+                </button>
+            </div>
+            <div class="debug-content" id="debugContent">
+                Initializing diagnostics...
+            </div>
+            <div class="debug-links">
+                <a href="/api/debug-database" target="_blank">Check Database</a>
+                <a href="/api" target="_blank">API Endpoints</a>
+                <a href="/health" target="_blank">Health Check</a>
+                <a href="/test-html" target="_blank">Test HTML</a>
+                <a href="javascript:void(0)" onclick="forceTestRun()">Add Test Data</a>
+                <a href="javascript:void(0)" onclick="fixDatabase()">Fix Database</a>
+            </div>
         </div>
         
         <div class="header">
-            <div class="header-content">
-                <h1>📧 Email Intelligence Dashboard</h1>
+            <div>
+                <h1>📧 Email Summary Dashboard</h1>
                 <div class="last-updated" id="lastUpdated">Last updated: Loading...</div>
             </div>
             <div id="statusIndicator" class="status-indicator status-waiting">
@@ -475,22 +408,30 @@
         
         <div class="controls">
             <button class="btn btn-primary" onclick="triggerManualRun()">
-                🔄 Run Summary Now
+                🔄 Run Email Summary Now
             </button>
-            <button class="btn btn-secondary" onclick="refreshData()">
-                📊 Refresh Data
+            <button class="btn btn-success" onclick="refreshData()">
+                📊 Refresh Dashboard
             </button>
-            <button class="btn btn-secondary" onclick="testConnection()">
-                🔧 Test Connection
+            <button class="btn btn-secondary" onclick="testAllEndpoints()">
+                🔗 Test All Connections
+            </button>
+            <button class="btn btn-danger" onclick="clearLocalData()">
+                🗑️ Clear Local Cache
             </button>
         </div>
         
         <div class="summary-table-container">
             <div class="table-header">
-                <h3>Email Intelligence Report</h3>
-                <button class="refresh-btn" onclick="refreshData()">
-                    ↻ Refresh Table
-                </button>
+                <h3 style="margin: 0; color: white;">📋 Email Summaries Table</h3>
+                <div>
+                    <button class="refresh-btn" onclick="refreshEmailTable()">
+                        ↻ Refresh Table
+                    </button>
+                    <span style="margin-left: 10px; font-size: 0.9em;" id="emailCount">
+                        Loading...
+                    </span>
+                </div>
             </div>
             
             <div style="overflow-x: auto;">
@@ -501,13 +442,13 @@
                             <th class="email-sender">Sender</th>
                             <th class="email-receiver">Receiver</th>
                             <th class="email-subject">Email Subject</th>
-                            <th class="email-summary">AI Summary</th>
+                            <th class="email-summary">Summary</th>
                         </tr>
                     </thead>
                     <tbody id="emailTableBody">
                         <tr>
                             <td colspan="5" class="no-data">
-                                Loading email intelligence data...
+                                Loading email data...
                             </td>
                         </tr>
                     </tbody>
@@ -519,94 +460,92 @@
     <script>
         // Load data when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Dashboard loaded, testing connections...');
-            testConnection();
+            console.log('📱 Dashboard loaded');
+            runDiagnostics();
             loadDashboardData();
             setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
         });
         
-        async function testConnection() {
+        function updateDebugContent(message, type = 'info') {
+            const debugContent = document.getElementById('debugContent');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6';
+            
+            debugContent.innerHTML = `<pre style="color: ${color};">[${timestamp}] ${message}</pre>`;
+            debugContent.scrollTop = debugContent.scrollHeight;
+        }
+        
+        async function runDiagnostics() {
             try {
-                showNotification('🔧 Testing system connections...', 'info');
+                updateDebugContent('🚀 Starting system diagnostics...', 'info');
                 
-                // Test basic connectivity
+                // Test basic API connectivity
+                updateDebugContent('Testing API connectivity...', 'info');
                 const debugResponse = await fetch('/api/debug');
                 if (!debugResponse.ok) {
-                    throw new Error(`Debug API error: ${debugResponse.status}`);
+                    throw new Error(`API debug endpoint failed: ${debugResponse.status}`);
                 }
-                const debugData = await debugResponse.json();
+                updateDebugContent('✅ API connectivity: OK', 'success');
+                
+                // Test database
+                updateDebugContent('Testing database connection...', 'info');
+                const dbResponse = await fetch('/api/debug-database');
+                if (!dbResponse.ok) {
+                    throw new Error(`Database endpoint failed: ${dbResponse.status}`);
+                }
+                const dbData = await dbResponse.json();
+                
+                if (dbData.error) {
+                    updateDebugContent(`❌ Database error: ${dbData.error}`, 'error');
+                } else {
+                    updateDebugContent(`✅ Database: ${dbData.summary_runs_count || 0} runs, ${dbData.email_data_count || 0} emails`, 'success');
+                }
                 
                 // Test stats endpoint
+                updateDebugContent('Testing stats endpoint...', 'info');
                 const statsResponse = await fetch('/api/stats');
                 if (!statsResponse.ok) {
-                    throw new Error(`Stats API error: ${statsResponse.status}`);
+                    throw new Error(`Stats endpoint failed: ${statsResponse.status}`);
                 }
-                const statsText = await statsResponse.text();
+                updateDebugContent('✅ Stats endpoint: OK', 'success');
                 
-                // Check if response is JSON
-                let statsData;
-                try {
-                    statsData = JSON.parse(statsText);
-                } catch (e) {
-                    throw new Error(`Stats API returned HTML instead of JSON: ${statsText.substring(0, 100)}...`);
-                }
-                
-                // Test email data endpoint
+                // Test email endpoint
+                updateDebugContent('Testing email data endpoint...', 'info');
                 const emailResponse = await fetch('/api/recent-summaries');
                 if (!emailResponse.ok) {
-                    throw new Error(`Email API error: ${emailResponse.status}`);
+                    throw new Error(`Email endpoint failed: ${emailResponse.status}`);
                 }
-                const emailText = await emailResponse.text();
+                const emailData = await emailResponse.json();
+                updateDebugContent(`✅ Email endpoint: ${Array.isArray(emailData) ? emailData.length : 0} emails found`, 'success');
                 
-                let emailData;
-                try {
-                    emailData = JSON.parse(emailText);
-                } catch (e) {
-                    throw new Error(`Email API returned HTML instead of JSON: ${emailText.substring(0, 100)}...`);
-                }
-                
-                // Update debug info
-                document.getElementById('debugInfo').innerHTML = `
-                    <strong>System Status:</strong><br>
-                    ✅ Debug API: Operational<br>
-                    ✅ Stats Endpoint: Operational (${statsResponse.status})<br>
-                    ✅ Email Endpoint: Operational (${emailResponse.status})<br>
-                    📧 Intelligence Records: ${emailData.length || 0}<br>
-                    🕒 Last System Check: ${new Date().toLocaleTimeString()}
-                `;
-                
-                showNotification('✅ All systems operational!', 'success');
+                updateDebugContent('✅ All diagnostics completed successfully!', 'success');
+                showNotification('✅ System diagnostics completed successfully', 'success');
                 
             } catch (error) {
-                console.error('Connection test failed:', error);
-                document.getElementById('debugInfo').innerHTML = `
-                    <strong>System Issues Detected:</strong><br>
-                    ❌ Error: ${error.message}<br>
-                    🔗 Check browser console (F12) for details<br>
-                    🕒 Last Check: ${new Date().toLocaleTimeString()}<br>
-                    <a href="/api/debug" target="_blank">Test API Debug</a> | 
-                    <a href="/api/test-json" target="_blank">Test JSON</a>
-                `;
-                showNotification('❌ System test failed: ' + error.message, 'error');
+                console.error('Diagnostics failed:', error);
+                updateDebugContent(`❌ Diagnostics failed: ${error.message}`, 'error');
+                showNotification(`❌ Diagnostics failed: ${error.message}`, 'error');
             }
+        }
+        
+        async function testAllEndpoints() {
+            showNotification('🔗 Testing all API endpoints...', 'info');
+            await runDiagnostics();
         }
         
         async function loadDashboardData() {
             try {
-                console.log('Loading dashboard intelligence data...');
+                console.log('📊 Loading dashboard data...');
                 
-                // Load stats with error handling
+                // Load stats
                 const statsResponse = await fetch('/api/stats');
                 if (!statsResponse.ok) {
                     throw new Error(`Stats API error: ${statsResponse.status}`);
                 }
                 
-                const statsText = await statsResponse.text();
-                let stats;
-                try {
-                    stats = JSON.parse(statsText);
-                } catch (e) {
-                    throw new Error(`Stats API returned invalid JSON: ${statsText.substring(0, 100)}`);
+                const stats = await statsResponse.json();
+                if (stats.error) {
+                    throw new Error(stats.error);
                 }
                 
                 updateStats(stats);
@@ -617,24 +556,17 @@
                     throw new Error(`Email API error: ${emailResponse.status}`);
                 }
                 
-                const emailText = await emailResponse.text();
-                let emailData;
-                try {
-                    emailData = JSON.parse(emailText);
-                } catch (e) {
-                    throw new Error(`Email API returned invalid JSON: ${emailText.substring(0, 100)}`);
-                }
-                
+                const emailData = await emailResponse.json();
                 updateEmailTable(emailData);
                 
                 // Update last updated timestamp
                 document.getElementById('lastUpdated').textContent = 
                     'Last updated: ' + new Date().toLocaleTimeString();
                 
-                console.log('Dashboard intelligence data loaded successfully');
+                console.log('✅ Dashboard data loaded successfully');
                 
             } catch (error) {
-                console.error('Error loading dashboard data:', error);
+                console.error('❌ Error loading dashboard data:', error);
                 document.getElementById('statusIndicator').className = 'status-indicator status-inactive';
                 document.getElementById('statusText').textContent = 'Connection Error';
                 
@@ -643,8 +575,10 @@
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="5" class="no-data">
-                            ❌ System error loading intelligence data: ${error.message}<br>
-                            <a href="/api/debug" target="_blank">Check API Status</a>
+                            ❌ Error loading data: ${error.message}<br>
+                            <button onclick="runDiagnostics()" style="margin-top: 10px; padding: 8px 16px; background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Run Diagnostics
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -675,41 +609,58 @@
         
         function updateEmailTable(emailData) {
             const tableBody = document.getElementById('emailTableBody');
+            const emailCount = document.getElementById('emailCount');
             
             if (!emailData || emailData.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="5" class="no-data">
-                            No email intelligence available yet.<br>
-                            Click "Run Summary Now" to process emails or wait for the scheduled intelligence run.
+                            📭 No email summaries available yet.<br>
+                            Click "Run Email Summary Now" to process emails or wait for the scheduled run.
                         </td>
                     </tr>
                 `;
+                emailCount.textContent = '0 emails';
                 return;
             }
             
             let tableHTML = '';
             
             emailData.forEach((email, index) => {
-                const hasAttachment = email.has_attachment || false;
-                const rowClass = hasAttachment ? 'row-attachment' : '';
-                const attachmentBadge = hasAttachment ? '<span class="attachment-badge">📎 Attachment</span>' : '';
-                
                 tableHTML += `
-                    <tr class="${rowClass}">
-                        <td class="email-number">${index + 1}</td>
+                    <tr>
+                        <td class="email-number">${email.number || index + 1}</td>
                         <td class="email-sender">${escapeHtml(email.from || 'Unknown')}</td>
                         <td class="email-receiver">${escapeHtml(email.to || 'Unknown')}</td>
-                        <td class="email-subject">
-                            ${escapeHtml(email.subject || 'No Subject')}
-                            ${attachmentBadge}
-                        </td>
-                        <td class="email-summary">${escapeHtml(email.summary || 'AI analysis in progress...')}</td>
+                        <td class="email-subject">${escapeHtml(email.subject || 'No Subject')}</td>
+                        <td class="email-summary">${escapeHtml(email.summary || 'Summary not available')}</td>
                     </tr>
                 `;
             });
             
             tableBody.innerHTML = tableHTML;
+            emailCount.textContent = `${emailData.length} email${emailData.length !== 1 ? 's' : ''}`;
+        }
+        
+        async function refreshEmailTable() {
+            try {
+                const response = await fetch('/api/recent-summaries');
+                if (!response.ok) {
+                    throw new Error(`Email API error: ${response.status}`);
+                }
+                
+                const emailData = await response.json();
+                updateEmailTable(emailData);
+                showNotification('✅ Email table refreshed', 'success');
+            } catch (error) {
+                showNotification(`❌ Error refreshing table: ${error.message}`, 'error');
+            }
+        }
+        
+        async function refreshData() {
+            showNotification('🔄 Refreshing dashboard data...', 'info');
+            await loadDashboardData();
+            showNotification('✅ Dashboard refreshed successfully', 'success');
         }
         
         function escapeHtml(unsafe) {
@@ -728,7 +679,9 @@
             const originalText = btn.innerHTML;
             
             btn.classList.add('loading');
-            btn.innerHTML = '⏳ Processing Intelligence...';
+            btn.innerHTML = '⏳ Processing emails...';
+            
+            showNotification('🚀 Starting email summary process... This may take 10-15 minutes.', 'info');
             
             try {
                 const response = await fetch('/api/trigger-manual', {
@@ -745,29 +698,97 @@
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    showNotification('✅ Intelligence process started! This may take 10-15 minutes. The dashboard will update automatically when complete.');
+                    showNotification('✅ Email summary process started! The table will update automatically when complete.', 'success');
                     
-                    // Start polling for updates more frequently
+                    // Start polling for updates
                     startPollingForUpdates();
                 } else {
-                    showNotification('❌ Error: ' + result.message, 'error');
+                    showNotification('❌ Error: ' + (result.message || 'Unknown error'), 'error');
                 }
             } catch (error) {
-                showNotification('❌ Error triggering intelligence run: ' + error.message, 'error');
+                showNotification('❌ Error triggering manual run: ' + error.message, 'error');
             } finally {
                 btn.classList.remove('loading');
                 btn.innerHTML = originalText;
             }
         }
         
-        function refreshData() {
-            loadDashboardData();
-            showNotification('📊 Intelligence data refreshed!');
+        async function forceTestRun() {
+            showNotification('🧪 Adding test data to database...', 'info');
+            
+            try {
+                const response = await fetch('/api/force-test-run');
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showNotification('✅ Test data added successfully! Refreshing dashboard...', 'success');
+                    setTimeout(refreshData, 1000);
+                } else {
+                    showNotification('❌ Failed to add test data: ' + (result.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Error adding test data: ' + error.message, 'error');
+            }
+        }
+        
+        async function fixDatabase() {
+            showNotification('🔧 Fixing database issues...', 'info');
+            
+            try {
+                const response = await fetch('/api/fix-database');
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showNotification('✅ Database fixed successfully! Refreshing dashboard...', 'success');
+                    setTimeout(refreshData, 1000);
+                } else {
+                    showNotification('❌ Failed to fix database: ' + (result.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Error fixing database: ' + error.message, 'error');
+            }
+        }
+        
+        function startPollingForUpdates() {
+            // Poll every 5 seconds for 5 minutes
+            let attempts = 0;
+            const maxAttempts = 60;
+            
+            const pollInterval = setInterval(() => {
+                attempts++;
+                console.log(`🔄 Polling for updates (attempt ${attempts}/${maxAttempts})`);
+                loadDashboardData();
+                
+                if (attempts >= maxAttempts) {
+                    clearInterval(pollInterval);
+                    showNotification('ℹ️ Automatic update polling stopped after 5 minutes.', 'info');
+                }
+            }, 5000);
+            
+            // Stop polling after 5 minutes
+            setTimeout(() => {
+                clearInterval(pollInterval);
+            }, 300000);
+        }
+        
+        function clearLocalData() {
+            if (confirm('Are you sure you want to clear local cache? This will refresh all data from the server.')) {
+                showNotification('🗑️ Clearing local cache...', 'info');
+                loadDashboardData();
+            }
         }
         
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
-            notification.className = `notification ${type === 'error' ? 'error' : type === 'info' ? 'info' : ''}`;
+            notification.className = `notification ${type}`;
             notification.textContent = message;
             document.body.appendChild(notification);
             
@@ -778,34 +799,14 @@
             }, 10);
             
             setTimeout(() => {
-                notification.style.transform = 'translateX(400px)';
+                notification.style.transform = 'translateX(100%)';
                 notification.style.opacity = '0';
                 setTimeout(() => {
                     if (document.body.contains(notification)) {
                         document.body.removeChild(notification);
                     }
-                }, 400);
+                }, 300);
             }, 5000);
-        }
-        
-        function startPollingForUpdates() {
-            // Poll every 10 seconds for 5 minutes
-            let attempts = 0;
-            const maxAttempts = 30;
-            
-            const pollInterval = setInterval(() => {
-                attempts++;
-                loadDashboardData();
-                
-                if (attempts >= maxAttempts) {
-                    clearInterval(pollInterval);
-                    showNotification('ℹ️ Automatic update polling stopped after 5 minutes.');
-                }
-            }, 10000);
-            
-            setTimeout(() => {
-                clearInterval(pollInterval);
-            }, 300000);
         }
     </script>
 </body>
