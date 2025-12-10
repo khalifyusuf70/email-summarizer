@@ -81,9 +81,6 @@
             font-weight: 600;
             transition: all 0.3s ease;
             font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
         }
         
         .btn-primary {
@@ -120,62 +117,6 @@
         
         .btn-danger:hover {
             background: #dc2626;
-        }
-        
-        .btn-export {
-            background: #8b5cf6;
-            color: white;
-        }
-        
-        .btn-export:hover {
-            background: #7c3aed;
-        }
-        
-        .export-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .export-menu {
-            display: none;
-            position: absolute;
-            background: white;
-            min-width: 200px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            z-index: 1000;
-            top: 100%;
-            left: 0;
-            margin-top: 5px;
-            overflow: hidden;
-        }
-        
-        .export-dropdown:hover .export-menu {
-            display: block;
-        }
-        
-        .export-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 16px;
-            text-decoration: none;
-            color: #374151;
-            transition: all 0.2s ease;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .export-option:last-child {
-            border-bottom: none;
-        }
-        
-        .export-option:hover {
-            background: #f9fafb;
-            color: #4f46e5;
-        }
-        
-        .export-icon {
-            font-size: 16px;
         }
         
         .status-indicator {
@@ -411,132 +352,7 @@
             background: #f3f4f6;
             text-decoration: underline;
         }
-        
-        .export-section {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-        
-        .export-section h3 {
-            margin-bottom: 15px;
-            color: #374151;
-        }
-        
-        .export-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-        
-        .export-card {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            border: 2px solid #e5e7eb;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        
-        .export-card:hover {
-            border-color: #4f46e5;
-            background: white;
-            transform: translateY(-2px);
-        }
-        
-        .export-card i {
-            font-size: 24px;
-            margin-bottom: 10px;
-            display: block;
-        }
-        
-        .export-card.pdf i { color: #ef4444; }
-        .export-card.excel i { color: #10b981; }
-        .export-card.csv i { color: #3b82f6; }
-        .export-card.word i { color: #2563eb; }
-        
-        .export-card span {
-            display: block;
-            font-weight: 600;
-            color: #374151;
-        }
-        
-        .export-card small {
-            color: #6b7280;
-            font-size: 0.85em;
-            margin-top: 5px;
-            display: block;
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #6b7280;
-        }
-        
-        .modal-body {
-            margin-bottom: 20px;
-        }
-        
-        .export-progress {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .spinner {
-            border: 3px solid #f3f4f6;
-            border-top: 3px solid #4f46e5;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="dashboard">
@@ -544,25 +360,25 @@
             <div class="debug-header">
                 <h3 style="margin: 0; color: #374151;">System Diagnostics</h3>
                 <button class="btn btn-secondary" onclick="runDiagnostics()" style="padding: 6px 12px; font-size: 12px;">
-                    <i class="fas fa-tools"></i> Run Diagnostics
+                    🔧 Run Diagnostics
                 </button>
             </div>
             <div class="debug-content" id="debugContent">
                 Initializing diagnostics...
             </div>
             <div class="debug-links">
-                <a href="/api/debug-database" target="_blank"><i class="fas fa-database"></i> Check Database</a>
-                <a href="/api" target="_blank"><i class="fas fa-code"></i> API Endpoints</a>
-                <a href="/health" target="_blank"><i class="fas fa-heartbeat"></i> Health Check</a>
-                <a href="/test-html" target="_blank"><i class="fas fa-file-code"></i> Test HTML</a>
-                <a href="javascript:void(0)" onclick="forceTestRun()"><i class="fas fa-vial"></i> Add Test Data</a>
-                <a href="javascript:void(0)" onclick="fixDatabase()"><i class="fas fa-wrench"></i> Fix Database</a>
+                <a href="/api/debug-database" target="_blank">Check Database</a>
+                <a href="/api" target="_blank">API Endpoints</a>
+                <a href="/health" target="_blank">Health Check</a>
+                <a href="/test-html" target="_blank">Test HTML</a>
+                <a href="javascript:void(0)" onclick="forceTestRun()">Add Test Data</a>
+                <a href="javascript:void(0)" onclick="fixDatabase()">Fix Database</a>
             </div>
         </div>
         
         <div class="header">
             <div>
-                <h1><i class="fas fa-envelope"></i> Email Summary Dashboard</h1>
+                <h1>📧 Email Summary Dashboard</h1>
                 <div class="last-updated" id="lastUpdated">Last updated: Loading...</div>
             </div>
             <div id="statusIndicator" class="status-indicator status-waiting">
@@ -592,74 +408,25 @@
         
         <div class="controls">
             <button class="btn btn-primary" onclick="triggerManualRun()">
-                <i class="fas fa-sync-alt"></i> Run Email Summary Now
+                🔄 Run Email Summary Now
             </button>
             <button class="btn btn-success" onclick="refreshData()">
-                <i class="fas fa-redo"></i> Refresh Dashboard
+                📊 Refresh Dashboard
             </button>
-            <div class="export-dropdown">
-                <button class="btn btn-export">
-                    <i class="fas fa-download"></i> Export Data
-                </button>
-                <div class="export-menu">
-                    <a href="javascript:void(0)" onclick="exportData('pdf')" class="export-option">
-                        <i class="fas fa-file-pdf export-icon" style="color: #ef4444;"></i>
-                        Export as PDF
-                    </a>
-                    <a href="javascript:void(0)" onclick="exportData('excel')" class="export-option">
-                        <i class="fas fa-file-excel export-icon" style="color: #10b981;"></i>
-                        Export as Excel
-                    </a>
-                    <a href="javascript:void(0)" onclick="exportData('csv')" class="export-option">
-                        <i class="fas fa-file-csv export-icon" style="color: #3b82f6;"></i>
-                        Export as CSV
-                    </a>
-                    <a href="javascript:void(0)" onclick="exportData('word')" class="export-option">
-                        <i class="fas fa-file-word export-icon" style="color: #2563eb;"></i>
-                        Export as Word
-                    </a>
-                </div>
-            </div>
             <button class="btn btn-secondary" onclick="testAllEndpoints()">
-                <i class="fas fa-link"></i> Test All Connections
+                🔗 Test All Connections
             </button>
             <button class="btn btn-danger" onclick="clearLocalData()">
-                <i class="fas fa-trash-alt"></i> Clear Local Cache
+                🗑️ Clear Local Cache
             </button>
-        </div>
-        
-        <div class="export-section">
-            <h3><i class="fas fa-file-export"></i> Quick Export Options</h3>
-            <div class="export-grid">
-                <div class="export-card pdf" onclick="exportData('pdf')">
-                    <i class="fas fa-file-pdf"></i>
-                    <span>PDF Report</span>
-                    <small>Best for printing</small>
-                </div>
-                <div class="export-card excel" onclick="exportData('excel')">
-                    <i class="fas fa-file-excel"></i>
-                    <span>Excel Spreadsheet</span>
-                    <small>For data analysis</small>
-                </div>
-                <div class="export-card csv" onclick="exportData('csv')">
-                    <i class="fas fa-file-csv"></i>
-                    <span>CSV File</span>
-                    <small>For database import</small>
-                </div>
-                <div class="export-card word" onclick="exportData('word')">
-                    <i class="fas fa-file-word"></i>
-                    <span>Word Document</span>
-                    <small>For editing & sharing</small>
-                </div>
-            </div>
         </div>
         
         <div class="summary-table-container">
             <div class="table-header">
-                <h3 style="margin: 0; color: white;"><i class="fas fa-table"></i> Email Summaries Table</h3>
+                <h3 style="margin: 0; color: white;">📋 Email Summaries Table</h3>
                 <div>
                     <button class="refresh-btn" onclick="refreshEmailTable()">
-                        <i class="fas fa-redo"></i> Refresh Table
+                        ↻ Refresh Table
                     </button>
                     <span style="margin-left: 10px; font-size: 0.9em;" id="emailCount">
                         Loading...
@@ -686,25 +453,6 @@
                         </tr>
                     </tbody>
                 </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Export Modal -->
-    <div class="modal" id="exportModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 style="margin: 0;">Exporting Data</h3>
-                <button class="close-modal" onclick="closeExportModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="exportStatus">
-                    Preparing export file...
-                </div>
-                <div class="export-progress" id="exportProgress">
-                    <div class="spinner"></div>
-                    <p>Generating file, please wait...</p>
-                </div>
             </div>
         </div>
     </div>
@@ -770,15 +518,6 @@
                 const emailData = await emailResponse.json();
                 updateDebugContent(`✅ Email endpoint: ${Array.isArray(emailData) ? emailData.length : 0} emails found`, 'success');
                 
-                // Test export endpoints
-                updateDebugContent('Testing export endpoints...', 'info');
-                const exportResponse = await fetch('/api/export/pdf');
-                if (exportResponse.status !== 200 && exportResponse.status !== 404) {
-                    updateDebugContent(`⚠️ PDF export endpoint: ${exportResponse.status}`, 'warning');
-                } else {
-                    updateDebugContent('✅ Export endpoints: OK', 'success');
-                }
-                
                 updateDebugContent('✅ All diagnostics completed successfully!', 'success');
                 showNotification('✅ System diagnostics completed successfully', 'success');
                 
@@ -836,10 +575,9 @@
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="5" class="no-data">
-                            <i class="fas fa-exclamation-triangle" style="color: #ef4444; font-size: 24px; margin-bottom: 10px;"></i><br>
                             ❌ Error loading data: ${error.message}<br>
                             <button onclick="runDiagnostics()" style="margin-top: 10px; padding: 8px 16px; background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                <i class="fas fa-tools"></i> Run Diagnostics
+                                Run Diagnostics
                             </button>
                         </td>
                     </tr>
@@ -877,7 +615,6 @@
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="5" class="no-data">
-                            <i class="fas fa-inbox" style="font-size: 32px; color: #9ca3af; margin-bottom: 10px;"></i><br>
                             📭 No email summaries available yet.<br>
                             Click "Run Email Summary Now" to process emails or wait for the scheduled run.
                         </td>
@@ -890,17 +627,13 @@
             let tableHTML = '';
             
             emailData.forEach((email, index) => {
-                const emailIcon = email.from && email.from.toLowerCase().includes('@jubalandstate.so') 
-                    ? '<i class="fas fa-building" style="color: #4f46e5; margin-right: 5px;"></i>'
-                    : '<i class="fas fa-user" style="color: #6b7280; margin-right: 5px;"></i>';
-                
                 tableHTML += `
                     <tr>
                         <td class="email-number">${email.number || index + 1}</td>
-                        <td class="email-sender">${emailIcon} ${escapeHtml(email.from || 'Unknown')}</td>
-                        <td class="email-receiver"><i class="fas fa-envelope" style="color: #6b7280; margin-right: 5px;"></i> ${escapeHtml(email.to || 'Unknown')}</td>
-                        <td class="email-subject"><i class="fas fa-tag" style="color: #6b7280; margin-right: 5px;"></i> ${escapeHtml(email.subject || 'No Subject')}</td>
-                        <td class="email-summary"><i class="fas fa-file-alt" style="color: #6b7280; margin-right: 5px;"></i> ${escapeHtml(email.summary || 'Summary not available')}</td>
+                        <td class="email-sender">${escapeHtml(email.from || 'Unknown')}</td>
+                        <td class="email-receiver">${escapeHtml(email.to || 'Unknown')}</td>
+                        <td class="email-subject">${escapeHtml(email.subject || 'No Subject')}</td>
+                        <td class="email-summary">${escapeHtml(email.summary || 'Summary not available')}</td>
                     </tr>
                 `;
             });
@@ -946,7 +679,7 @@
             const originalText = btn.innerHTML;
             
             btn.classList.add('loading');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing emails...';
+            btn.innerHTML = '⏳ Processing emails...';
             
             showNotification('🚀 Starting email summary process... This may take 10-15 minutes.', 'info');
             
@@ -1024,109 +757,6 @@
             }
         }
         
-        async function exportData(format) {
-            const modal = document.getElementById('exportModal');
-            const exportStatus = document.getElementById('exportStatus');
-            const exportProgress = document.getElementById('exportProgress');
-            
-            // Show modal
-            modal.style.display = 'flex';
-            exportStatus.textContent = `Preparing ${format.toUpperCase()} export...`;
-            exportProgress.style.display = 'none';
-            
-            try {
-                showNotification(`📤 Preparing ${format.toUpperCase()} export...`, 'info');
-                
-                // Map format to endpoint
-                const endpoints = {
-                    'pdf': '/api/export/pdf',
-                    'excel': '/api/export/excel',
-                    'csv': '/api/export/csv',
-                    'word': '/api/export/word'
-                };
-                
-                const endpoint = endpoints[format];
-                if (!endpoint) {
-                    throw new Error(`Unsupported export format: ${format}`);
-                }
-                
-                // Show progress
-                exportProgress.style.display = 'block';
-                exportStatus.textContent = `Generating ${format.toUpperCase()} file...`;
-                
-                // Make export request
-                const response = await fetch(endpoint);
-                
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        throw new Error('No data available for export. Please run email summary first.');
-                    }
-                    throw new Error(`Export failed: ${response.status} ${response.statusText}`);
-                }
-                
-                // Get filename from response or generate one
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-                let filename = `email_summary_${timestamp}`;
-                
-                // Check content-disposition header for filename
-                const contentDisposition = response.headers.get('content-disposition');
-                if (contentDisposition) {
-                    const match = contentDisposition.match(/filename="(.+)"/);
-                    if (match) {
-                        filename = match[1];
-                    }
-                } else {
-                    // Use format-specific extension
-                    const extensions = {
-                        'pdf': '.pdf',
-                        'excel': '.xlsx',
-                        'csv': '.csv',
-                        'word': '.docx'
-                    };
-                    filename += extensions[format] || '.bin';
-                }
-                
-                // Get blob and create download link
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-                
-                // Update status and close modal
-                exportStatus.textContent = `✅ ${format.toUpperCase()} export completed successfully!`;
-                exportProgress.style.display = 'none';
-                
-                showNotification(`✅ ${format.toUpperCase()} export downloaded successfully!`, 'success');
-                
-                // Close modal after 2 seconds
-                setTimeout(() => {
-                    modal.style.display = 'none';
-                }, 2000);
-                
-            } catch (error) {
-                console.error(`Export error (${format}):`, error);
-                exportStatus.innerHTML = `
-                    <div style="color: #ef4444; text-align: center;">
-                        <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 15px;"></i>
-                        <h4>Export Failed</h4>
-                        <p>${error.message}</p>
-                    </div>
-                `;
-                exportProgress.style.display = 'none';
-                
-                showNotification(`❌ Export failed: ${error.message}`, 'error');
-            }
-        }
-        
-        function closeExportModal() {
-            document.getElementById('exportModal').style.display = 'none';
-        }
-        
         function startPollingForUpdates() {
             // Poll every 5 seconds for 5 minutes
             let attempts = 0;
@@ -1159,15 +789,7 @@
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
-            
-            // Add icon based on type
-            let icon = 'fas fa-check-circle';
-            if (type === 'error') icon = 'fas fa-exclamation-circle';
-            if (type === 'info') icon = 'fas fa-info-circle';
-            if (type === 'warning') icon = 'fas fa-exclamation-triangle';
-            
-            notification.innerHTML = `<i class="${icon}" style="margin-right: 10px;"></i> ${message}`;
-            
+            notification.textContent = message;
             document.body.appendChild(notification);
             
             // Animate in
