@@ -26,8 +26,18 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-product
 DEFAULT_USERNAME = os.getenv('DASHBOARD_USERNAME', 'admin')
 DEFAULT_PASSWORD = os.getenv('DASHBOARD_PASSWORD', 'admin123')
 
-# Initialize hashed password variable
+# Global variable for hashed password
 hashed_password = None
+
+def get_db_path():
+    """Get database path that works for both web service and cron job"""
+    # On Render, use /tmp directory which is shared between services
+    if os.getenv('RENDER'):
+        return '/tmp/email_summaries.db'
+    else:
+        return 'email_summaries.db'
+
+# ==================== PASSWORD MANAGEMENT ====================
 
 def initialize_hashed_password():
     """Initialize the hashed password from environment variable"""
@@ -38,14 +48,6 @@ def initialize_hashed_password():
 
 # Initialize the password hash
 initialize_hashed_password()
-
-def get_db_path():
-    """Get database path that works for both web service and cron job"""
-    # On Render, use /tmp directory which is shared between services
-    if os.getenv('RENDER'):
-        return '/tmp/email_summaries.db'
-    else:
-        return 'email_summaries.db'
 
 # ==================== AUTHENTICATION DECORATORS ====================
 
@@ -402,7 +404,7 @@ def fix_database():
         c = conn.cursor()
         
         # Add a test run
-        current_time = datetime.now().strftime('%Y-%m-d %H:%M:%S')
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         c.execute('''
             INSERT INTO summary_runs 
             (run_date, total_emails, processed_emails, success_rate, status)
