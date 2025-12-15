@@ -26,8 +26,9 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-product
 DEFAULT_USERNAME = os.getenv('DASHBOARD_USERNAME', 'admin')
 DEFAULT_PASSWORD = os.getenv('DASHBOARD_PASSWORD', 'admin123')
 
-# Global variable for hashed password
-hashed_password = None
+# Hash the password at module level (no global declaration needed in functions)
+HASHED_PASSWORD = bcrypt.hashpw(DEFAULT_PASSWORD.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+print(f"🔐 Password hash initialized for user: {DEFAULT_USERNAME}")
 
 def get_db_path():
     """Get database path that works for both web service and cron job"""
@@ -36,18 +37,6 @@ def get_db_path():
         return '/tmp/email_summaries.db'
     else:
         return 'email_summaries.db'
-
-# ==================== PASSWORD MANAGEMENT ====================
-
-def initialize_hashed_password():
-    """Initialize the hashed password from environment variable"""
-    global hashed_password
-    password_to_hash = DEFAULT_PASSWORD
-    hashed_password = bcrypt.hashpw(password_to_hash.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    print(f"🔐 Password hash initialized for user: {DEFAULT_USERNAME}")
-
-# Initialize the password hash
-initialize_hashed_password()
 
 # ==================== AUTHENTICATION DECORATORS ====================
 
@@ -81,7 +70,7 @@ def login():
         if username == DEFAULT_USERNAME:
             # Check password
             try:
-                if bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8')):
+                if bcrypt.checkpw(password.encode('utf-8'), HASHED_PASSWORD.encode('utf-8')):
                     session['logged_in'] = True
                     session['username'] = username
                     session['login_time'] = datetime.now().isoformat()
@@ -115,6 +104,8 @@ def logout():
 @admin_required
 def change_password():
     """Change password page (admin only)"""
+    global HASHED_PASSWORD  # Declare as global since we need to modify it
+    
     if request.method == 'POST':
         current_password = request.form.get('current_password', '').strip()
         new_password = request.form.get('new_password', '').strip()
@@ -122,7 +113,7 @@ def change_password():
         
         # Validate current password
         try:
-            if not bcrypt.checkpw(current_password.encode('utf-8'), hashed_password.encode('utf-8')):
+            if not bcrypt.checkpw(current_password.encode('utf-8'), HASHED_PASSWORD.encode('utf-8')):
                 flash('Current password is incorrect', 'error')
                 return render_template('change_password.html')
         except Exception as e:
@@ -139,9 +130,8 @@ def change_password():
             return render_template('change_password.html')
         
         # Update password
-        global hashed_password
         try:
-            hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            HASHED_PASSWORD = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         except Exception as e:
             flash('Error hashing new password', 'error')
             return render_template('change_password.html')
