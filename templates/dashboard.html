@@ -116,6 +116,9 @@
             font-weight: 600;
             transition: all 0.3s ease;
             font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .btn-primary {
@@ -152,6 +155,56 @@
         
         .btn-danger:hover {
             background: #dc2626;
+        }
+        
+        .btn-export {
+            background: #8b5cf6;
+            color: white;
+        }
+        
+        .btn-export:hover {
+            background: #7c3aed;
+        }
+        
+        .export-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .export-dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            z-index: 100;
+            margin-top: 5px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .export-dropdown:hover .export-dropdown-content {
+            display: block;
+        }
+        
+        .export-option {
+            color: #374151;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .export-option:hover {
+            background-color: #f9fafb;
+        }
+        
+        .export-option i {
+            font-size: 16px;
         }
         
         .status-indicator {
@@ -290,6 +343,9 @@
             color: #374151;
             font-size: 0.9em;
             transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
         
         .refresh-btn:hover {
@@ -381,15 +437,424 @@
             background: #f3f4f6;
             text-decoration: underline;
         }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #4f46e5;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+        
+        .close-modal:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .export-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .export-option-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+        
+        .export-option-btn:hover {
+            background: #f3f4f6;
+            border-color: #4f46e5;
+            transform: translateY(-2px);
+        }
+        
+        .export-option-btn.active {
+            background: #eef2ff;
+            border-color: #4f46e5;
+            color: #4f46e5;
+        }
+        
+        .export-option-btn i {
+            font-size: 24px;
+            color: #6b7280;
+        }
+        
+        .export-option-btn.active i {
+            color: #4f46e5;
+        }
+        
+        .export-option-info {
+            flex: 1;
+        }
+        
+        .export-option-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: #374151;
+        }
+        
+        .export-option-info p {
+            margin: 0;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .export-settings {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .export-settings h4 {
+            margin: 0 0 15px 0;
+            color: #374151;
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #374151;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+        
+        .checkbox-group label {
+            margin: 0;
+        }
+        
+        .export-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            justify-content: flex-end;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .filter-group label {
+            font-weight: 500;
+            color: #374151;
+            font-size: 14px;
+        }
+        
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            min-width: 150px;
+        }
+        
+        .search-box {
+            flex: 1;
+            max-width: 300px;
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+        
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .pagination {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .pagination-btn {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #374151;
+            transition: all 0.3s ease;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background: #f3f4f6;
+            border-color: #4f46e5;
+        }
+        
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .pagination-info {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 0 10px;
+        }
+        
+        .email-date {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 5px;
+        }
     </style>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-export"></i> Export Email Summaries</h3>
+                <button class="close-modal" onclick="closeExportModal()">&times;</button>
+            </div>
+            
+            <div class="export-options">
+                <div class="export-option-btn" onclick="selectExportFormat('csv')" id="exportCsvBtn">
+                    <i class="fas fa-file-csv"></i>
+                    <div class="export-option-info">
+                        <h4>CSV Format</h4>
+                        <p>Comma-separated values for spreadsheets</p>
+                    </div>
+                    <i class="fas fa-check" style="display: none;"></i>
+                </div>
+                
+                <div class="export-option-btn" onclick="selectExportFormat('json')" id="exportJsonBtn">
+                    <i class="fas fa-file-code"></i>
+                    <div class="export-option-info">
+                        <h4>JSON Format</h4>
+                        <p>JavaScript Object Notation for APIs</p>
+                    </div>
+                    <i class="fas fa-check" style="display: none;"></i>
+                </div>
+                
+                <div class="export-option-btn" onclick="selectExportFormat('word')" id="exportWordBtn">
+                    <i class="fas fa-file-word"></i>
+                    <div class="export-option-info">
+                        <h4>Word Document</h4>
+                        <p>Microsoft Word format for reports</p>
+                    </div>
+                    <i class="fas fa-check" style="display: none;"></i>
+                </div>
+            </div>
+            
+            <div class="export-settings">
+                <h4>Export Settings</h4>
+                
+                <div class="form-group">
+                    <label for="exportFilename">Filename</label>
+                    <input type="text" id="exportFilename" value="email_summaries" placeholder="Enter filename">
+                </div>
+                
+                <div class="form-group">
+                    <label for="exportDateRange">Date Range</label>
+                    <select id="exportDateRange">
+                        <option value="all">All Emails</option>
+                        <option value="today">Today Only</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                
+                <div id="customDateRange" style="display: none;">
+                    <div class="form-group">
+                        <label for="exportStartDate">Start Date</label>
+                        <input type="date" id="exportStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="exportEndDate">End Date</label>
+                        <input type="date" id="exportEndDate">
+                    </div>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="includeMetadata" checked>
+                    <label for="includeMetadata">Include metadata (sender, receiver, date)</label>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="includeSummary" checked>
+                    <label for="includeSummary">Include email summaries</label>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="includeSubject" checked>
+                    <label for="includeSubject">Include email subjects</label>
+                </div>
+            </div>
+            
+            <div class="export-actions">
+                <button class="btn btn-secondary" onclick="closeExportModal()">
+                    Cancel
+                </button>
+                <button class="btn btn-export" onclick="performExport()" id="exportActionBtn">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <div class="dashboard">
         <div class="debug-panel">
             <div class="debug-header">
                 <h3 style="margin: 0; color: #374151;">System Diagnostics</h3>
                 <button class="btn btn-secondary" onclick="runDiagnostics()" style="padding: 6px 12px; font-size: 12px;">
-                    🔧 Run Diagnostics
+                    <i class="fas fa-wrench"></i> Run Diagnostics
                 </button>
             </div>
             <div class="debug-content" id="debugContent">
@@ -407,12 +872,12 @@
         
         <div class="header">
             <div class="header-left">
-                <h1>📧 Email Summary Dashboard</h1>
+                <h1><i class="fas fa-envelope"></i> Email Summary Dashboard</h1>
                 <div class="last-updated" id="lastUpdated">Last updated: Loading...</div>
                 <div class="user-info">
-                    👤 Logged in as: <strong>{{ username }}</strong> 
-                    | <a href="/change-password">Change Password</a>
-                    | <a href="/logout" class="logout">Logout</a>
+                    <i class="fas fa-user"></i> Logged in as: <strong>{{ username }}</strong> 
+                    | <a href="/change-password"><i class="fas fa-key"></i> Change Password</a>
+                    | <a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
             </div>
             <div id="statusIndicator" class="status-indicator status-waiting">
@@ -442,29 +907,93 @@
         
         <div class="controls">
             <button class="btn btn-primary" onclick="triggerManualRun()">
-                🔄 Run Email Summary Now
+                <i class="fas fa-sync-alt"></i> Run Email Summary Now
             </button>
             <button class="btn btn-success" onclick="refreshData()">
-                📊 Refresh Dashboard
+                <i class="fas fa-chart-bar"></i> Refresh Dashboard
             </button>
+            
+            <div class="export-dropdown">
+                <button class="btn btn-export">
+                    <i class="fas fa-file-export"></i> Export Data
+                </button>
+                <div class="export-dropdown-content">
+                    <div class="export-option" onclick="openExportModal('csv')">
+                        <i class="fas fa-file-csv"></i> Export as CSV
+                    </div>
+                    <div class="export-option" onclick="openExportModal('json')">
+                        <i class="fas fa-file-code"></i> Export as JSON
+                    </div>
+                    <div class="export-option" onclick="openExportModal('word')">
+                        <i class="fas fa-file-word"></i> Export as Word
+                    </div>
+                    <div class="export-option" onclick="exportAllData()">
+                        <i class="fas fa-database"></i> Export All Data
+                    </div>
+                </div>
+            </div>
+            
             <button class="btn btn-secondary" onclick="testAllEndpoints()">
-                🔗 Test All Connections
+                <i class="fas fa-link"></i> Test All Connections
             </button>
             <button class="btn btn-danger" onclick="clearLocalData()">
-                🗑️ Clear Local Cache
+                <i class="fas fa-trash"></i> Clear Local Cache
             </button>
+        </div>
+        
+        <div class="filter-controls">
+            <div class="filter-group">
+                <label for="filterSender">Sender:</label>
+                <select id="filterSender" onchange="applyFilters()">
+                    <option value="">All Senders</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="filterReceiver">Receiver:</label>
+                <select id="filterReceiver" onchange="applyFilters()">
+                    <option value="">All Receivers</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="sortBy">Sort By:</label>
+                <select id="sortBy" onchange="applyFilters()">
+                    <option value="number">Email Number</option>
+                    <option value="sender">Sender</option>
+                    <option value="receiver">Receiver</option>
+                    <option value="subject">Subject</option>
+                </select>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search emails..." onkeyup="applyFilters()">
+                <i class="fas fa-search"></i>
+            </div>
         </div>
         
         <div class="summary-table-container">
             <div class="table-header">
-                <h3 style="margin: 0; color: white;">📋 Email Summaries Table</h3>
-                <div>
-                    <button class="refresh-btn" onclick="refreshEmailTable()">
-                        ↻ Refresh Table
-                    </button>
-                    <span style="margin-left: 10px; font-size: 0.9em;" id="emailCount">
-                        Loading...
-                    </span>
+                <h3 style="margin: 0; color: white;"><i class="fas fa-table"></i> Email Summaries Table</h3>
+                <div class="table-controls">
+                    <div>
+                        <button class="refresh-btn" onclick="refreshEmailTable()">
+                            <i class="fas fa-redo"></i> Refresh Table
+                        </button>
+                        <span style="margin-left: 10px; font-size: 0.9em;" id="emailCount">
+                            Loading...
+                        </span>
+                    </div>
+                    
+                    <div class="pagination">
+                        <button class="pagination-btn" onclick="previousPage()" id="prevPageBtn" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="pagination-info" id="pageInfo">Page 1 of 1</span>
+                        <button class="pagination-btn" onclick="nextPage()" id="nextPageBtn" disabled>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             
@@ -482,7 +1011,7 @@
                     <tbody id="emailTableBody">
                         <tr>
                             <td colspan="5" class="no-data">
-                                Loading email data...
+                                <i class="fas fa-spinner fa-spin"></i> Loading email data...
                             </td>
                         </tr>
                     </tbody>
@@ -492,12 +1021,36 @@
     </div>
 
     <script>
+        // Global variables for data management
+        let allEmailData = [];
+        let filteredEmailData = [];
+        let currentPage = 1;
+        const itemsPerPage = 20;
+        let currentExportFormat = 'csv';
+        let sendersList = [];
+        let receiversList = [];
+        
         // Load data when page loads
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📱 Dashboard loaded for user: {{ username }}');
             runDiagnostics();
             loadDashboardData();
             setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
+            
+            // Set default date for export
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('exportStartDate').value = today;
+            document.getElementById('exportEndDate').value = today;
+            
+            // Add event listener for date range selection
+            document.getElementById('exportDateRange').addEventListener('change', function() {
+                const customRangeDiv = document.getElementById('customDateRange');
+                if (this.value === 'custom') {
+                    customRangeDiv.style.display = 'block';
+                } else {
+                    customRangeDiv.style.display = 'none';
+                }
+            });
         });
         
         function updateDebugContent(message, type = 'info') {
@@ -609,9 +1162,9 @@
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="5" class="no-data">
-                            ❌ Error loading data: ${error.message}<br>
+                            <i class="fas fa-exclamation-triangle"></i> Error loading data: ${error.message}<br>
                             <button onclick="runDiagnostics()" style="margin-top: 10px; padding: 8px 16px; background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                Run Diagnostics
+                                <i class="fas fa-wrench"></i> Run Diagnostics
                             </button>
                         </td>
                     </tr>
@@ -642,29 +1195,129 @@
         }
         
         function updateEmailTable(emailData) {
-            const tableBody = document.getElementById('emailTableBody');
-            const emailCount = document.getElementById('emailCount');
+            allEmailData = emailData;
             
-            if (!emailData || emailData.length === 0) {
+            // Extract unique senders and receivers for filters
+            sendersList = [...new Set(emailData.map(email => email.from).filter(Boolean))];
+            receiversList = [...new Set(emailData.map(email => email.to).filter(Boolean))];
+            
+            // Update filter dropdowns
+            updateFilterDropdown('filterSender', sendersList);
+            updateFilterDropdown('filterReceiver', receiversList);
+            
+            // Apply filters and pagination
+            applyFilters();
+        }
+        
+        function updateFilterDropdown(selectId, items) {
+            const select = document.getElementById(selectId);
+            const currentValue = select.value;
+            
+            // Keep the first option
+            const firstOption = select.options[0];
+            select.innerHTML = '';
+            select.appendChild(firstOption);
+            
+            // Add sorted items
+            items.sort().forEach(item => {
+                const option = document.createElement('option');
+                option.value = item;
+                option.textContent = item;
+                select.appendChild(option);
+            });
+            
+            // Restore previous selection if it still exists
+            if (items.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+        
+        function applyFilters() {
+            const senderFilter = document.getElementById('filterSender').value.toLowerCase();
+            const receiverFilter = document.getElementById('filterReceiver').value.toLowerCase();
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            const sortBy = document.getElementById('sortBy').value;
+            
+            // Filter data
+            filteredEmailData = allEmailData.filter(email => {
+                const matchesSender = !senderFilter || email.from?.toLowerCase().includes(senderFilter);
+                const matchesReceiver = !receiverFilter || email.to?.toLowerCase().includes(receiverFilter);
+                const matchesSearch = !searchQuery || 
+                    email.from?.toLowerCase().includes(searchQuery) ||
+                    email.to?.toLowerCase().includes(searchQuery) ||
+                    email.subject?.toLowerCase().includes(searchQuery) ||
+                    email.summary?.toLowerCase().includes(searchQuery);
+                
+                return matchesSender && matchesReceiver && matchesSearch;
+            });
+            
+            // Sort data
+            filteredEmailData.sort((a, b) => {
+                switch(sortBy) {
+                    case 'sender':
+                        return (a.from || '').localeCompare(b.from || '');
+                    case 'receiver':
+                        return (a.to || '').localeCompare(b.to || '');
+                    case 'subject':
+                        return (a.subject || '').localeCompare(b.subject || '');
+                    default:
+                        return (a.number || 0) - (b.number || 0);
+                }
+            });
+            
+            // Reset to first page
+            currentPage = 1;
+            
+            // Update table with paginated data
+            updatePagination();
+            renderTablePage();
+        }
+        
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredEmailData.length / itemsPerPage);
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            const pageInfo = document.getElementById('pageInfo');
+            
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= totalPages;
+            
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages} (${filteredEmailData.length} emails)`;
+            
+            // Update email count
+            document.getElementById('emailCount').textContent = 
+                `${filteredEmailData.length} email${filteredEmailData.length !== 1 ? 's' : ''} (${allEmailData.length} total)`;
+        }
+        
+        function renderTablePage() {
+            const tableBody = document.getElementById('emailTableBody');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = filteredEmailData.slice(startIndex, endIndex);
+            
+            if (!pageData || pageData.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="5" class="no-data">
-                            📭 No email summaries available yet.<br>
-                            Click "Run Email Summary Now" to process emails or wait for the scheduled run.
+                            <i class="fas fa-inbox"></i> No email summaries match your filters.<br>
+                            Try adjusting your filters or click "Run Email Summary Now" to process emails.
                         </td>
                     </tr>
                 `;
-                emailCount.textContent = '0 emails';
                 return;
             }
             
             let tableHTML = '';
             
-            emailData.forEach((email, index) => {
+            pageData.forEach((email, index) => {
+                const globalIndex = startIndex + index + 1;
                 tableHTML += `
                     <tr>
-                        <td class="email-number">${email.number || index + 1}</td>
-                        <td class="email-sender">${escapeHtml(email.from || 'Unknown')}</td>
+                        <td class="email-number">${globalIndex}</td>
+                        <td class="email-sender">
+                            <div>${escapeHtml(email.from || 'Unknown')}</div>
+                            ${email.date ? `<div class="email-date">${formatDate(email.date)}</div>` : ''}
+                        </td>
                         <td class="email-receiver">${escapeHtml(email.to || 'Unknown')}</td>
                         <td class="email-subject">${escapeHtml(email.subject || 'No Subject')}</td>
                         <td class="email-summary">${escapeHtml(email.summary || 'Summary not available')}</td>
@@ -673,7 +1326,33 @@
             });
             
             tableBody.innerHTML = tableHTML;
-            emailCount.textContent = `${emailData.length} email${emailData.length !== 1 ? 's' : ''}`;
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            } catch (e) {
+                return dateString;
+            }
+        }
+        
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                updatePagination();
+                renderTablePage();
+            }
+        }
+        
+        function nextPage() {
+            const totalPages = Math.ceil(filteredEmailData.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                updatePagination();
+                renderTablePage();
+            }
         }
         
         async function refreshEmailTable() {
@@ -713,7 +1392,7 @@
             const originalText = btn.innerHTML;
             
             btn.classList.add('loading');
-            btn.innerHTML = '⏳ Processing emails...';
+            btn.innerHTML = '<div class="spinner"></div> Processing emails...';
             
             showNotification('🚀 Starting email summary process... This may take 10-15 minutes.', 'info');
             
@@ -820,10 +1499,250 @@
             }
         }
         
+        // ==================== EXPORT FUNCTIONS ====================
+        
+        function openExportModal(format = 'csv') {
+            currentExportFormat = format;
+            selectExportFormat(format);
+            
+            // Set default filename with date
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+            document.getElementById('exportFilename').value = `email_summaries_${dateStr}_${timeStr}`;
+            
+            document.getElementById('exportModal').style.display = 'block';
+        }
+        
+        function closeExportModal() {
+            document.getElementById('exportModal').style.display = 'none';
+        }
+        
+        function selectExportFormat(format) {
+            currentExportFormat = format;
+            
+            // Remove active class from all buttons
+            document.getElementById('exportCsvBtn').classList.remove('active');
+            document.getElementById('exportJsonBtn').classList.remove('active');
+            document.getElementById('exportWordBtn').classList.remove('active');
+            
+            // Hide all checkmarks
+            document.querySelectorAll('.export-option-btn i.fa-check').forEach(icon => {
+                icon.style.display = 'none';
+            });
+            
+            // Add active class to selected button
+            const selectedBtn = document.getElementById(`export${format.charAt(0).toUpperCase() + format.slice(1)}Btn`);
+            selectedBtn.classList.add('active');
+            selectedBtn.querySelector('.fa-check').style.display = 'inline-block';
+            
+            // Update export button text
+            document.getElementById('exportActionBtn').innerHTML = 
+                `<i class="fas fa-download"></i> Export as ${format.toUpperCase()}`;
+        }
+        
+        async function performExport() {
+            const filename = document.getElementById('exportFilename').value || 'email_summaries';
+            const dateRange = document.getElementById('exportDateRange').value;
+            const includeMetadata = document.getElementById('includeMetadata').checked;
+            const includeSummary = document.getElementById('includeSummary').checked;
+            const includeSubject = document.getElementById('includeSubject').checked;
+            
+            // Get data to export (use filtered data if available, otherwise all data)
+            let dataToExport = filteredEmailData.length > 0 ? filteredEmailData : allEmailData;
+            
+            if (dateRange === 'custom') {
+                const startDate = document.getElementById('exportStartDate').value;
+                const endDate = document.getElementById('exportEndDate').value;
+                
+                if (startDate && endDate) {
+                    dataToExport = dataToExport.filter(email => {
+                        if (!email.date) return true;
+                        const emailDate = new Date(email.date).toISOString().split('T')[0];
+                        return emailDate >= startDate && emailDate <= endDate;
+                    });
+                }
+            }
+            
+            if (dataToExport.length === 0) {
+                showNotification('❌ No data to export', 'error');
+                return;
+            }
+            
+            // Prepare data based on selected options
+            const exportData = dataToExport.map(email => {
+                const item = {};
+                if (includeMetadata) {
+                    item.number = email.number;
+                    item.from = email.from || 'Unknown';
+                    item.to = email.to || 'Unknown';
+                    item.date = email.date || '';
+                }
+                if (includeSubject) {
+                    item.subject = email.subject || 'No Subject';
+                }
+                if (includeSummary) {
+                    item.summary = email.summary || 'Summary not available';
+                }
+                return item;
+            });
+            
+            // Show loading state
+            const exportBtn = document.getElementById('exportActionBtn');
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<div class="spinner"></div> Exporting...';
+            exportBtn.disabled = true;
+            
+            try {
+                switch(currentExportFormat) {
+                    case 'csv':
+                        await exportAsCSV(exportData, filename);
+                        break;
+                    case 'json':
+                        await exportAsJSON(exportData, filename);
+                        break;
+                    case 'word':
+                        await exportAsWord(exportData, filename);
+                        break;
+                    default:
+                        throw new Error('Unsupported export format');
+                }
+                
+                showNotification(`✅ Exported ${exportData.length} emails as ${currentExportFormat.toUpperCase()}`, 'success');
+                closeExportModal();
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                showNotification(`❌ Export failed: ${error.message}`, 'error');
+            } finally {
+                exportBtn.innerHTML = originalText;
+                exportBtn.disabled = false;
+            }
+        }
+        
+        function exportAsCSV(data, filename) {
+            if (data.length === 0) return;
+            
+            // Create CSV content
+            const headers = Object.keys(data[0]);
+            const csvRows = [
+                headers.join(','),
+                ...data.map(row => headers.map(header => {
+                    let cell = row[header] || '';
+                    // Escape quotes and wrap in quotes if contains comma, quote, or newline
+                    if (typeof cell === 'string') {
+                        cell = cell.replace(/"/g, '""');
+                        if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                            cell = `"${cell}"`;
+                        }
+                    }
+                    return cell;
+                }).join(','))
+            ];
+            
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            downloadBlob(blob, `${filename}.csv`, 'text/csv');
+        }
+        
+        function exportAsJSON(data, filename) {
+            const jsonContent = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonContent], { type: 'application/json' });
+            downloadBlob(blob, `${filename}.json`, 'application/json');
+        }
+        
+        async function exportAsWord(data, filename) {
+            try {
+                const response = await fetch('/api/export-word', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        emails: data,
+                        filename: filename
+                    })
+                });
+                
+                if (!response.ok) {
+                    // If endpoint doesn't exist, create a simple text version
+                    const wordContent = createSimpleWordContent(data);
+                    const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+                    downloadBlob(blob, `${filename}.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                } else {
+                    const blob = await response.blob();
+                    downloadBlob(blob, `${filename}.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                }
+            } catch (error) {
+                // Fallback to simple text version
+                console.log('Word export endpoint not available, using fallback:', error);
+                const wordContent = createSimpleWordContent(data);
+                const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+                downloadBlob(blob, `${filename}.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            }
+        }
+        
+        function createSimpleWordContent(data) {
+            // Create a simple text version for Word export
+            let content = `Email Summaries Report\n`;
+            content += `Generated on: ${new Date().toLocaleString()}\n`;
+            content += `Total Emails: ${data.length}\n\n`;
+            content += '='.repeat(80) + '\n\n';
+            
+            data.forEach((email, index) => {
+                content += `EMAIL ${index + 1}\n`;
+                content += `From: ${email.from || 'Unknown'}\n`;
+                content += `To: ${email.to || 'Unknown'}\n`;
+                if (email.date) content += `Date: ${email.date}\n`;
+                if (email.subject) content += `Subject: ${email.subject}\n\n`;
+                if (email.summary) content += `Summary: ${email.summary}\n\n`;
+                content += '-'.repeat(40) + '\n\n';
+            });
+            
+            return content;
+        }
+        
+        function downloadBlob(blob, filename, mimeType) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        async function exportAllData() {
+            try {
+                const response = await fetch('/api/all-email-data');
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch all data: ${response.status}`);
+                }
+                
+                const allData = await response.json();
+                const now = new Date();
+                const filename = `all_email_data_${now.toISOString().split('T')[0]}`;
+                
+                // Export as JSON
+                exportAsJSON(allData, filename);
+                showNotification(`✅ Exported all email data (${allData.length} records)`, 'success');
+                
+            } catch (error) {
+                console.error('Export all data error:', error);
+                // Fallback to current data
+                const now = new Date();
+                const filename = `email_data_${now.toISOString().split('T')[0]}`;
+                exportAsJSON(allEmailData, filename);
+                showNotification(`✅ Exported current email data (${allEmailData.length} records)`, 'success');
+            }
+        }
+        
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
-            notification.textContent = message;
+            notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
             document.body.appendChild(notification);
             
             // Animate in
@@ -841,6 +1760,14 @@
                     }
                 }, 300);
             }, 5000);
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('exportModal');
+            if (event.target === modal) {
+                closeExportModal();
+            }
         }
     </script>
 </body>
