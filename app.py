@@ -7,15 +7,27 @@ import requests
 import os
 import re
 import time
-from flask import Flask, render_template, jsonify, request, redirect
+from flask import Flask, render_template, jsonify, request, redirect, session, flash
 import logging
 import sqlite3
 import json
 import traceback
 import threading
+import bcrypt
+from functools import wraps
 
 # Initialize Flask app FIRST
 app = Flask(__name__)
+
+# Generate a secure secret key (store this in environment variable in production)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# Default admin credentials (change these in production)
+DEFAULT_USERNAME = os.getenv('DASHBOARD_USERNAME', 'admin')
+DEFAULT_PASSWORD = os.getenv('DASHBOARD_PASSWORD', 'admin123')
+
+# Hash the default password on startup
+hashed_password = bcrypt.hashpw(DEFAULT_PASSWORD.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 def get_db_path():
     """Get database path that works for both web service and cron job"""
@@ -24,6 +36,102 @@ def get_db_path():
         return '/tmp/email_summaries.db'
     else:
         return 'email_summaries.db'
+
+# ==================== AUTHENTICATION DECORATORS ====================
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect('/login?next=' + request.path)
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session or session.get('username') != DEFAULT_USERNAME:
+            return redirect('/login?next=' + request.path)
+        return f(*args, **kwargs)
+    return decorated_function
+
+# ==================== AUTHENTICATION ROUTES ====================
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page"""
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        next_page = request.args.get('next', '/dashboard')
+        
+        # Verify credentials
+        if username == DEFAULT_USERNAME:
+            # Check password
+            stored_hash = hashed_password
+            if bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
+                session['logged_in'] = True
+                session['username'] = username
+                session['login_time'] = datetime.now().isoformat()
+                
+                # Set session to expire after 24 hours
+                session.permanent = True
+                app.permanent_session_lifetime = timedelta(hours=24)
+                
+                print(f"🔐 User '{username}' logged in successfully")
+                return redirect(next_page)
+        
+        # Invalid credentials
+        flash('Invalid username or password', 'error')
+        return render_template('login.html', error='Invalid credentials')
+    
+    # GET request - show login form
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    """Logout user"""
+    username = session.get('username', 'Unknown')
+    session.clear()
+    print(f"🔐 User '{username}' logged out")
+    flash('You have been logged out successfully', 'success')
+    return redirect('/login')
+
+@app.route('/change-password', methods=['GET', 'POST'])
+@admin_required
+def change_password():
+    """Change password page (admin only)"""
+    if request.method == 'POST':
+        current_password = request.form.get('current_password', '').strip()
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+        
+        # Validate current password
+        if not bcrypt.checkpw(current_password.encode('utf-8'), hashed_password.encode('utf-8')):
+            flash('Current password is incorrect', 'error')
+            return render_template('change_password.html')
+        
+        # Validate new password
+        if new_password != confirm_password:
+            flash('New passwords do not match', 'error')
+            return render_template('change_password.html')
+        
+        if len(new_password) < 8:
+            flash('New password must be at least 8 characters', 'error')
+            return render_template('change_password.html')
+        
+        # Update password
+        global hashed_password
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        # Log out all sessions
+        session.clear()
+        
+        print("🔐 Password changed successfully")
+        flash('Password changed successfully. Please log in again.', 'success')
+        return redirect('/login')
+    
+    return render_template('change_password.html')
 
 # ==================== DATABASE INITIALIZATION ====================
 
@@ -80,15 +188,18 @@ init_db()
 
 @app.route('/')
 def root():
-    """Redirect root to dashboard"""
-    return redirect('/dashboard')
+    """Redirect root to login or dashboard based on auth"""
+    if 'logged_in' in session:
+        return redirect('/dashboard')
+    return redirect('/login')
 
 @app.route('/dashboard')
+@login_required
 def dashboard():
     """Main dashboard page"""
     try:
-        print("📊 Serving dashboard page...")
-        return render_template('dashboard.html')
+        print(f"📊 Serving dashboard page to user '{session.get('username')}'...")
+        return render_template('dashboard.html', username=session.get('username'))
     except Exception as e:
         return f"""
         <html>
@@ -153,11 +264,13 @@ def test_html():
     """
 
 @app.route('/api')
+@login_required
 def api_home():
     """API home page"""
     return jsonify({
         "status": "Email Summarizer API is running",
         "timestamp": datetime.now().isoformat(),
+        "user": session.get('username'),
         "endpoints": {
             "dashboard": "/dashboard",
             "test_page": "/test-html", 
@@ -174,24 +287,29 @@ def api_home():
     })
 
 @app.route('/api/debug')
+@login_required
 def api_debug():
     """Debug API endpoint"""
     return jsonify({
         "status": "API is working",
         "timestamp": datetime.now().isoformat(),
+        "user": session.get('username'),
         "endpoint": "/api/debug"
     })
 
 @app.route('/api/test-json')
+@login_required
 def test_json():
     """Test JSON response"""
     return jsonify({
         "message": "This is a test JSON response",
         "numbers": [1, 2, 3],
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "user": session.get('username')
     })
 
 @app.route('/api/debug-database')
+@login_required
 def debug_database():
     """Debug database contents"""
     try:
@@ -249,6 +367,7 @@ def debug_database():
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/fix-database')
+@admin_required
 def fix_database():
     """Debug and fix database issues"""
     try:
@@ -297,6 +416,7 @@ def fix_database():
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/force-test-run')
+@admin_required
 def force_test_run():
     """Force a test run with sample data"""
     try:
@@ -334,6 +454,7 @@ def force_test_run():
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/stats')
+@login_required
 def get_stats():
     """API endpoint for dashboard statistics"""
     try:
@@ -358,7 +479,8 @@ def get_stats():
                 "last_run": latest_run[1],
                 "next_run": (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d 09:00:00'),
                 "deepseek_usage": "Calculating...",
-                "status": "active"
+                "status": "active",
+                "user": session.get('username')
             }
         else:
             # Default stats if no runs yet
@@ -369,7 +491,8 @@ def get_stats():
                 "last_run": "Never",
                 "next_run": (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d 09:00:00'),
                 "deepseek_usage": "0 tokens",
-                "status": "waiting"
+                "status": "waiting",
+                "user": session.get('username')
             }
         
         return jsonify(stats)
@@ -377,6 +500,7 @@ def get_stats():
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/recent-summaries')
+@login_required
 def get_recent_summaries():
     """API endpoint for recent email summaries - FIXED VERSION"""
     try:
@@ -452,6 +576,7 @@ def get_fallback_email_data():
     ]
 
 @app.route('/api/trigger-manual', methods=['POST'])
+@admin_required
 def trigger_manual_run():
     """Manually trigger email summary process"""
     try:
@@ -471,7 +596,8 @@ def trigger_manual_run():
         return jsonify({
             "status": "success", 
             "message": "Email summary process started in background. This may take 10-15 minutes.",
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "triggered_by": session.get('username')
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e), "traceback": traceback.format_exc()}), 500
