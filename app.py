@@ -26,8 +26,18 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-product
 DEFAULT_USERNAME = os.getenv('DASHBOARD_USERNAME', 'admin')
 DEFAULT_PASSWORD = os.getenv('DASHBOARD_PASSWORD', 'admin123')
 
-# Hash the default password on startup
-hashed_password = bcrypt.hashpw(DEFAULT_PASSWORD.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+# Initialize hashed password variable
+hashed_password = None
+
+def initialize_hashed_password():
+    """Initialize the hashed password from environment variable"""
+    global hashed_password
+    password_to_hash = DEFAULT_PASSWORD
+    hashed_password = bcrypt.hashpw(password_to_hash.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    print(f"🔐 Password hash initialized for user: {DEFAULT_USERNAME}")
+
+# Initialize the password hash
+initialize_hashed_password()
 
 def get_db_path():
     """Get database path that works for both web service and cron job"""
@@ -68,18 +78,20 @@ def login():
         # Verify credentials
         if username == DEFAULT_USERNAME:
             # Check password
-            stored_hash = hashed_password
-            if bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
-                session['logged_in'] = True
-                session['username'] = username
-                session['login_time'] = datetime.now().isoformat()
-                
-                # Set session to expire after 24 hours
-                session.permanent = True
-                app.permanent_session_lifetime = timedelta(hours=24)
-                
-                print(f"🔐 User '{username}' logged in successfully")
-                return redirect(next_page)
+            try:
+                if bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8')):
+                    session['logged_in'] = True
+                    session['username'] = username
+                    session['login_time'] = datetime.now().isoformat()
+                    
+                    # Set session to expire after 24 hours
+                    session.permanent = True
+                    app.permanent_session_lifetime = timedelta(hours=24)
+                    
+                    print(f"🔐 User '{username}' logged in successfully")
+                    return redirect(next_page)
+            except Exception as e:
+                print(f"🔐 Login error: {e}")
         
         # Invalid credentials
         flash('Invalid username or password', 'error')
@@ -107,8 +119,12 @@ def change_password():
         confirm_password = request.form.get('confirm_password', '').strip()
         
         # Validate current password
-        if not bcrypt.checkpw(current_password.encode('utf-8'), hashed_password.encode('utf-8')):
-            flash('Current password is incorrect', 'error')
+        try:
+            if not bcrypt.checkpw(current_password.encode('utf-8'), hashed_password.encode('utf-8')):
+                flash('Current password is incorrect', 'error')
+                return render_template('change_password.html')
+        except Exception as e:
+            flash('Error validating current password', 'error')
             return render_template('change_password.html')
         
         # Validate new password
@@ -122,7 +138,11 @@ def change_password():
         
         # Update password
         global hashed_password
-        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        try:
+            hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        except Exception as e:
+            flash('Error hashing new password', 'error')
+            return render_template('change_password.html')
         
         # Log out all sessions
         session.clear()
@@ -382,7 +402,7 @@ def fix_database():
         c = conn.cursor()
         
         # Add a test run
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        current_time = datetime.now().strftime('%Y-%m-d %H:%M:%S')
         c.execute('''
             INSERT INTO summary_runs 
             (run_date, total_emails, processed_emails, success_rate, status)
