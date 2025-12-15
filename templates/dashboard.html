@@ -37,6 +37,41 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
+        .header-left h1 {
+            margin-bottom: 8px;
+            color: #4f46e5;
+        }
+        
+        .last-updated {
+            color: #9ca3af;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+        
+        .user-info {
+            font-size: 0.85em;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        
+        .user-info strong {
+            color: #4f46e5;
+        }
+        
+        .user-info a {
+            color: #4f46e5;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        
+        .user-info a:hover {
+            text-decoration: underline;
+        }
+        
+        .user-info a.logout {
+            color: #ef4444;
+        }
+        
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -246,12 +281,6 @@
             font-style: italic;
         }
         
-        .last-updated {
-            color: #9ca3af;
-            font-size: 0.85em;
-            margin-top: 10px;
-        }
-        
         .refresh-btn {
             background: transparent;
             border: 1px solid #d1d5db;
@@ -377,9 +406,14 @@
         </div>
         
         <div class="header">
-            <div>
+            <div class="header-left">
                 <h1>📧 Email Summary Dashboard</h1>
                 <div class="last-updated" id="lastUpdated">Last updated: Loading...</div>
+                <div class="user-info">
+                    👤 Logged in as: <strong>{{ username }}</strong> 
+                    | <a href="/change-password">Change Password</a>
+                    | <a href="/logout" class="logout">Logout</a>
+                </div>
             </div>
             <div id="statusIndicator" class="status-indicator status-waiting">
                 <div class="status-dot"></div>
@@ -460,7 +494,7 @@
     <script>
         // Load data when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('📱 Dashboard loaded');
+            console.log('📱 Dashboard loaded for user: {{ username }}');
             runDiagnostics();
             loadDashboardData();
             setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
