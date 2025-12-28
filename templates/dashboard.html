@@ -790,6 +790,15 @@
                     </div>
                     <i class="fas fa-check" style="display: none;"></i>
                 </div>
+                
+                <div class="export-option-btn" onclick="selectExportFormat('pdf')" id="exportPdfBtn">
+                    <i class="fas fa-file-pdf"></i>
+                    <div class="export-option-info">
+                        <h4>PDF Document</h4>
+                        <p>Portable Document Format for sharing</p>
+                    </div>
+                    <i class="fas fa-check" style="display: none;"></i>
+                </div>
             </div>
             
             <div class="export-settings">
@@ -802,7 +811,7 @@
                 
                 <div class="form-group">
                     <label for="exportDateRange">Date Range</label>
-                    <select id="exportDateRange">
+                    <select id="exportDateRange" onchange="toggleCustomDateRange()">
                         <option value="all">All Emails</option>
                         <option value="today">Today Only</option>
                         <option value="week">This Week</option>
@@ -835,6 +844,11 @@
                 <div class="form-group checkbox-group">
                     <input type="checkbox" id="includeSubject" checked>
                     <label for="includeSubject">Include email subjects</label>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="exportAllRuns" checked>
+                    <label for="exportAllRuns">Include data from all runs</label>
                 </div>
             </div>
             
@@ -926,6 +940,9 @@
                     </div>
                     <div class="export-option" onclick="openExportModal('word')">
                         <i class="fas fa-file-word"></i> Export as Word
+                    </div>
+                    <div class="export-option" onclick="openExportModal('pdf')">
+                        <i class="fas fa-file-pdf"></i> Export as PDF
                     </div>
                     <div class="export-option" onclick="exportAllData()">
                         <i class="fas fa-database"></i> Export All Data
@@ -1041,17 +1058,17 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('exportStartDate').value = today;
             document.getElementById('exportEndDate').value = today;
-            
-            // Add event listener for date range selection
-            document.getElementById('exportDateRange').addEventListener('change', function() {
-                const customRangeDiv = document.getElementById('customDateRange');
-                if (this.value === 'custom') {
-                    customRangeDiv.style.display = 'block';
-                } else {
-                    customRangeDiv.style.display = 'none';
-                }
-            });
         });
+        
+        function toggleCustomDateRange() {
+            const dateRange = document.getElementById('exportDateRange').value;
+            const customRangeDiv = document.getElementById('customDateRange');
+            if (dateRange === 'custom') {
+                customRangeDiv.style.display = 'block';
+            } else {
+                customRangeDiv.style.display = 'none';
+            }
+        }
         
         function updateDebugContent(message, type = 'info') {
             const debugContent = document.getElementById('debugContent');
@@ -1525,6 +1542,7 @@
             document.getElementById('exportCsvBtn').classList.remove('active');
             document.getElementById('exportJsonBtn').classList.remove('active');
             document.getElementById('exportWordBtn').classList.remove('active');
+            document.getElementById('exportPdfBtn').classList.remove('active');
             
             // Hide all checkmarks
             document.querySelectorAll('.export-option-btn i.fa-check').forEach(icon => {
@@ -1533,8 +1551,10 @@
             
             // Add active class to selected button
             const selectedBtn = document.getElementById(`export${format.charAt(0).toUpperCase() + format.slice(1)}Btn`);
-            selectedBtn.classList.add('active');
-            selectedBtn.querySelector('.fa-check').style.display = 'inline-block';
+            if (selectedBtn) {
+                selectedBtn.classList.add('active');
+                selectedBtn.querySelector('.fa-check').style.display = 'inline-block';
+            }
             
             // Update export button text
             document.getElementById('exportActionBtn').innerHTML = 
@@ -1547,45 +1567,26 @@
             const includeMetadata = document.getElementById('includeMetadata').checked;
             const includeSummary = document.getElementById('includeSummary').checked;
             const includeSubject = document.getElementById('includeSubject').checked;
+            const exportAllRuns = document.getElementById('exportAllRuns').checked;
             
-            // Get data to export (use filtered data if available, otherwise all data)
-            let dataToExport = filteredEmailData.length > 0 ? filteredEmailData : allEmailData;
+            // Prepare filters
+            const filters = {
+                dateRange: dateRange === 'all' ? null : dateRange,
+                includeMetadata: includeMetadata,
+                includeSummary: includeSummary,
+                includeSubject: includeSubject,
+                allRuns: exportAllRuns
+            };
             
             if (dateRange === 'custom') {
                 const startDate = document.getElementById('exportStartDate').value;
                 const endDate = document.getElementById('exportEndDate').value;
                 
                 if (startDate && endDate) {
-                    dataToExport = dataToExport.filter(email => {
-                        if (!email.date) return true;
-                        const emailDate = new Date(email.date).toISOString().split('T')[0];
-                        return emailDate >= startDate && emailDate <= endDate;
-                    });
+                    filters.startDate = startDate;
+                    filters.endDate = endDate;
                 }
             }
-            
-            if (dataToExport.length === 0) {
-                showNotification('❌ No data to export', 'error');
-                return;
-            }
-            
-            // Prepare data based on selected options
-            const exportData = dataToExport.map(email => {
-                const item = {};
-                if (includeMetadata) {
-                    item.number = email.number;
-                    item.from = email.from || 'Unknown';
-                    item.to = email.to || 'Unknown';
-                    item.date = email.date || '';
-                }
-                if (includeSubject) {
-                    item.subject = email.subject || 'No Subject';
-                }
-                if (includeSummary) {
-                    item.summary = email.summary || 'Summary not available';
-                }
-                return item;
-            });
             
             // Show loading state
             const exportBtn = document.getElementById('exportActionBtn');
@@ -1594,21 +1595,35 @@
             exportBtn.disabled = true;
             
             try {
-                switch(currentExportFormat) {
-                    case 'csv':
-                        await exportAsCSV(exportData, filename);
-                        break;
-                    case 'json':
-                        await exportAsJSON(exportData, filename);
-                        break;
-                    case 'word':
-                        await exportAsWord(exportData, filename);
-                        break;
-                    default:
-                        throw new Error('Unsupported export format');
+                const response = await fetch('/api/export-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        format: currentExportFormat,
+                        filename: filename,
+                        filters: filters
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Export failed');
                 }
                 
-                showNotification(`✅ Exported ${exportData.length} emails as ${currentExportFormat.toUpperCase()}`, 'success');
+                // Create download link
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${filename}.${currentExportFormat === 'word' ? 'docx' : currentExportFormat === 'pdf' ? 'pdf' : currentExportFormat}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showNotification(`✅ Exported as ${currentExportFormat.toUpperCase()}`, 'success');
                 closeExportModal();
                 
             } catch (error) {
@@ -1620,122 +1635,37 @@
             }
         }
         
-        function exportAsCSV(data, filename) {
-            if (data.length === 0) return;
-            
-            // Create CSV content
-            const headers = Object.keys(data[0]);
-            const csvRows = [
-                headers.join(','),
-                ...data.map(row => headers.map(header => {
-                    let cell = row[header] || '';
-                    // Escape quotes and wrap in quotes if contains comma, quote, or newline
-                    if (typeof cell === 'string') {
-                        cell = cell.replace(/"/g, '""');
-                        if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
-                            cell = `"${cell}"`;
-                        }
-                    }
-                    return cell;
-                }).join(','))
-            ];
-            
-            const csvContent = csvRows.join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            downloadBlob(blob, `${filename}.csv`, 'text/csv');
-        }
-        
-        function exportAsJSON(data, filename) {
-            const jsonContent = JSON.stringify(data, null, 2);
-            const blob = new Blob([jsonContent], { type: 'application/json' });
-            downloadBlob(blob, `${filename}.json`, 'application/json');
-        }
-        
-        async function exportAsWord(data, filename) {
-            try {
-                const response = await fetch('/api/export-word', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        emails: data,
-                        filename: filename
-                    })
-                });
-                
-                if (!response.ok) {
-                    // If endpoint doesn't exist, create a simple text version
-                    const wordContent = createSimpleWordContent(data);
-                    const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-                    downloadBlob(blob, `${filename}.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-                } else {
-                    const blob = await response.blob();
-                    downloadBlob(blob, `${filename}.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-                }
-            } catch (error) {
-                // Fallback to simple text version
-                console.log('Word export endpoint not available, using fallback:', error);
-                const wordContent = createSimpleWordContent(data);
-                const blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-                downloadBlob(blob, `${filename}.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-            }
-        }
-        
-        function createSimpleWordContent(data) {
-            // Create a simple text version for Word export
-            let content = `Email Summaries Report\n`;
-            content += `Generated on: ${new Date().toLocaleString()}\n`;
-            content += `Total Emails: ${data.length}\n\n`;
-            content += '='.repeat(80) + '\n\n';
-            
-            data.forEach((email, index) => {
-                content += `EMAIL ${index + 1}\n`;
-                content += `From: ${email.from || 'Unknown'}\n`;
-                content += `To: ${email.to || 'Unknown'}\n`;
-                if (email.date) content += `Date: ${email.date}\n`;
-                if (email.subject) content += `Subject: ${email.subject}\n\n`;
-                if (email.summary) content += `Summary: ${email.summary}\n\n`;
-                content += '-'.repeat(40) + '\n\n';
-            });
-            
-            return content;
-        }
-        
-        function downloadBlob(blob, filename, mimeType) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-        
         async function exportAllData() {
             try {
+                showNotification('📊 Exporting all email data...', 'info');
+                
                 const response = await fetch('/api/all-email-data');
                 if (!response.ok) {
                     throw new Error(`Failed to fetch all data: ${response.status}`);
                 }
                 
                 const allData = await response.json();
-                const now = new Date();
-                const filename = `all_email_data_${now.toISOString().split('T')[0]}`;
                 
-                // Export as JSON
-                exportAsJSON(allData, filename);
+                // Convert to JSON and download
+                const dataStr = JSON.stringify(allData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = window.URL.createObjectURL(dataBlob);
+                const a = document.createElement('a');
+                const now = new Date();
+                const filename = `all_email_data_${now.toISOString().split('T')[0]}.json`;
+                
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
                 showNotification(`✅ Exported all email data (${allData.length} records)`, 'success');
                 
             } catch (error) {
                 console.error('Export all data error:', error);
-                // Fallback to current data
-                const now = new Date();
-                const filename = `email_data_${now.toISOString().split('T')[0]}`;
-                exportAsJSON(allEmailData, filename);
-                showNotification(`✅ Exported current email data (${allEmailData.length} records)`, 'success');
+                showNotification(`❌ Export failed: ${error.message}`, 'error');
             }
         }
         
