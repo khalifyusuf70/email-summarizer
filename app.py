@@ -7,7 +7,7 @@ import requests
 import os
 import re
 import time
-from flask import Flask, render_template, jsonify, request, redirect, session, flash
+from flask import Flask, render_template, jsonify, request, redirect, session, flash, send_file
 import logging
 import sqlite3
 import json
@@ -15,6 +15,13 @@ import traceback
 import threading
 import bcrypt
 from functools import wraps
+import io
+import csv
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from fpdf import FPDF
 
 # Initialize Flask app FIRST
 app = Flask(__name__)
@@ -180,6 +187,7 @@ def init_db():
             receiver TEXT,
             subject TEXT,
             summary TEXT,
+            email_date TEXT,
             processed_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (run_id) REFERENCES summary_runs (id)
         )
@@ -188,6 +196,7 @@ def init_db():
     # Create indexes for better performance
     c.execute('CREATE INDEX IF NOT EXISTS idx_run_id ON email_data (run_id)')
     c.execute('CREATE INDEX IF NOT EXISTS idx_email_number ON email_data (email_number)')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_email_date ON email_data (email_date)')
     
     conn.commit()
     conn.close()
@@ -195,6 +204,330 @@ def init_db():
 
 # Initialize database immediately
 init_db()
+
+# ==================== EXPORT ROUTES ====================
+
+@app.route('/api/export-data', methods=['POST'])
+@login_required
+def export_data():
+    """Export email data in various formats"""
+    try:
+        data = request.json
+        format_type = data.get('format', 'csv')
+        filename = data.get('filename', 'email_summaries')
+        
+        # Get filters from request
+        filters = data.get('filters', {})
+        
+        # Get email data with filters
+        email_data = get_filtered_email_data(filters)
+        
+        if not email_data:
+            return jsonify({"error": "No data to export"}), 400
+        
+        if format_type == 'csv':
+            return export_csv(email_data, filename)
+        elif format_type == 'json':
+            return export_json(email_data, filename)
+        elif format_type == 'word':
+            return export_word(email_data, filename)
+        elif format_type == 'pdf':
+            return export_pdf(email_data, filename)
+        else:
+            return jsonify({"error": "Unsupported format"}), 400
+            
+    except Exception as e:
+        print(f"❌ Export error: {e}")
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+def get_filtered_email_data(filters):
+    """Get email data with optional filters"""
+    try:
+        db_path = get_db_path()
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        
+        # Build query based on filters
+        query = '''
+            SELECT email_number, sender, receiver, subject, summary, email_date 
+            FROM email_data 
+            WHERE 1=1
+        '''
+        params = []
+        
+        # Apply date filter
+        date_range = filters.get('dateRange')
+        if date_range == 'today':
+            today = datetime.now().strftime('%Y-%m-%d')
+            query += " AND DATE(email_date) = ?"
+            params.append(today)
+        elif date_range == 'week':
+            week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+            query += " AND DATE(email_date) >= ?"
+            params.append(week_ago)
+        elif date_range == 'month':
+            month_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+            query += " AND DATE(email_date) >= ?"
+            params.append(month_ago)
+        elif date_range == 'custom' and filters.get('startDate') and filters.get('endDate'):
+            query += " AND DATE(email_date) BETWEEN ? AND ?"
+            params.extend([filters['startDate'], filters['endDate']])
+        
+        # Apply sender/receiver filters
+        sender = filters.get('sender')
+        if sender:
+            query += " AND sender LIKE ?"
+            params.append(f'%{sender}%')
+        
+        receiver = filters.get('receiver')
+        if receiver:
+            query += " AND receiver LIKE ?"
+            params.append(f'%{receiver}%')
+        
+        # Apply search query
+        search = filters.get('search')
+        if search:
+            query += " AND (sender LIKE ? OR receiver LIKE ? OR subject LIKE ? OR summary LIKE ?)"
+            params.extend([f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%'])
+        
+        # Get latest run if no specific date range
+        if not date_range and not filters.get('allRuns', False):
+            c.execute('SELECT id FROM summary_runs ORDER BY id DESC LIMIT 1')
+            latest_run = c.fetchone()
+            if latest_run:
+                query += " AND run_id = ?"
+                params.append(latest_run[0])
+        
+        query += " ORDER BY email_number"
+        
+        c.execute(query, params)
+        rows = c.fetchall()
+        
+        email_data = []
+        for row in rows:
+            email_data.append({
+                "number": row[0],
+                "from": row[1],
+                "to": row[2],
+                "subject": row[3],
+                "summary": row[4],
+                "date": row[5]
+            })
+        
+        conn.close()
+        return email_data
+        
+    except Exception as e:
+        print(f"❌ Error getting filtered email data: {e}")
+        return []
+
+def export_csv(email_data, filename):
+    """Export email data as CSV"""
+    try:
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        writer.writerow(['#', 'Sender', 'Receiver', 'Date', 'Subject', 'Summary'])
+        
+        # Write data
+        for email in email_data:
+            writer.writerow([
+                email['number'],
+                email['from'],
+                email['to'],
+                email.get('date', ''),
+                email['subject'],
+                email['summary']
+            ])
+        
+        # Create response
+        output.seek(0)
+        mem_file = io.BytesIO()
+        mem_file.write(output.getvalue().encode('utf-8'))
+        mem_file.seek(0)
+        
+        return send_file(
+            mem_file,
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'{filename}.csv'
+        )
+        
+    except Exception as e:
+        print(f"❌ CSV export error: {e}")
+        raise
+
+def export_json(email_data, filename):
+    """Export email data as JSON"""
+    try:
+        # Create JSON in memory
+        mem_file = io.BytesIO()
+        mem_file.write(json.dumps(email_data, indent=2).encode('utf-8'))
+        mem_file.seek(0)
+        
+        return send_file(
+            mem_file,
+            mimetype='application/json',
+            as_attachment=True,
+            download_name=f'{filename}.json'
+        )
+        
+    except Exception as e:
+        print(f"❌ JSON export error: {e}")
+        raise
+
+def export_word(email_data, filename):
+    """Export email data as Word document"""
+    try:
+        print("📄 Creating Word document...")
+        
+        doc = Document()
+        
+        # Add title
+        title = doc.add_heading('Email Summary Report', 0)
+        title.alignment = 1
+        
+        # Add metadata
+        doc.add_paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        doc.add_paragraph(f"Total Emails: {len(email_data)}")
+        doc.add_paragraph()
+        
+        # Add table
+        table = doc.add_table(rows=1, cols=5)
+        table.style = 'Table Grid'
+        
+        # Header row
+        hdr_cells = table.rows[0].cells
+        headers = ['#', 'Sender', 'Receiver', 'Subject', 'Summary']
+        for i, header in enumerate(headers):
+            hdr_cells[i].text = header
+        
+        # Data rows
+        for email in email_data:
+            row_cells = table.add_row().cells
+            row_cells[0].text = str(email['number'])
+            row_cells[1].text = str(email['from'])[:40]
+            row_cells[2].text = str(email['to'])[:40]
+            row_cells[3].text = str(email['subject'])[:80]
+            row_cells[4].text = str(email['summary'])[:400]
+        
+        # Save to memory
+        mem_file = io.BytesIO()
+        doc.save(mem_file)
+        mem_file.seek(0)
+        
+        return send_file(
+            mem_file,
+            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            as_attachment=True,
+            download_name=f'{filename}.docx'
+        )
+        
+    except Exception as e:
+        print(f"❌ Word export error: {e}")
+        raise
+
+def export_pdf(email_data, filename):
+    """Export email data as PDF"""
+    try:
+        print("📄 Creating PDF document...")
+        
+        # Create PDF in memory
+        mem_file = io.BytesIO()
+        doc = SimpleDocTemplate(mem_file, pagesize=letter)
+        elements = []
+        
+        # Add title
+        styles = getSampleStyleSheet()
+        title = Paragraph("Email Summary Report", styles['Title'])
+        elements.append(title)
+        
+        # Add metadata
+        elements.append(Paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+        elements.append(Paragraph(f"Total Emails: {len(email_data)}", styles['Normal']))
+        elements.append(Spacer(1, 12))
+        
+        # Prepare table data
+        table_data = [['#', 'Sender', 'Receiver', 'Subject', 'Summary']]
+        
+        for email in email_data:
+            table_data.append([
+                str(email['number']),
+                str(email['from'])[:40],
+                str(email['to'])[:40],
+                str(email['subject'])[:60],
+                str(email['summary'])[:100]
+            ])
+        
+        # Create table
+        table = Table(table_data, colWidths=[30, 100, 100, 150, 200])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.whitesmoke])
+        ]))
+        
+        elements.append(table)
+        
+        # Build PDF
+        doc.build(elements)
+        mem_file.seek(0)
+        
+        return send_file(
+            mem_file,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'{filename}.pdf'
+        )
+        
+    except Exception as e:
+        print(f"❌ PDF export error: {e}")
+        raise
+
+@app.route('/api/all-email-data')
+@login_required
+def get_all_email_data():
+    """Get all email data for export"""
+    try:
+        db_path = get_db_path()
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        
+        c.execute('''
+            SELECT email_number, sender, receiver, subject, summary, email_date 
+            FROM email_data 
+            ORDER BY email_date DESC, email_number
+        ''')
+        
+        rows = c.fetchall()
+        conn.close()
+        
+        email_data = []
+        for row in rows:
+            email_data.append({
+                "number": row[0],
+                "from": row[1],
+                "to": row[2],
+                "subject": row[3],
+                "summary": row[4],
+                "date": row[5]
+            })
+        
+        return jsonify(email_data)
+        
+    except Exception as e:
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 # ==================== FLASK ROUTES ====================
 
@@ -294,7 +627,9 @@ def api_home():
             "test_json": "/api/test-json",
             "fix_database": "/api/fix-database",
             "force_test_run": "/api/force-test-run",
-            "trigger_manual": "/api/trigger-manual (POST)"
+            "trigger_manual": "/api/trigger-manual (POST)",
+            "export_data": "/api/export-data (POST)",
+            "all_email_data": "/api/all-email-data"
         }
     })
 
@@ -405,14 +740,14 @@ def fix_database():
         
         # Add test emails
         test_emails = [
-            (run_id, 1, "test@example.com", "archives@jubalandstate.so", "Test Email 1", "This is a test summary for email 1."),
-            (run_id, 2, "admin@example.com", "archives@jubalandstate.so", "Test Email 2", "This is a test summary for email 2.")
+            (run_id, 1, "test@example.com", "archives@jubalandstate.so", "Test Email 1", "This is a test summary for email 1.", current_time),
+            (run_id, 2, "admin@example.com", "archives@jubalandstate.so", "Test Email 2", "This is a test summary for email 2.", current_time)
         ]
         
         c.executemany('''
             INSERT INTO email_data 
-            (run_id, email_number, sender, receiver, subject, summary)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (run_id, email_number, sender, receiver, subject, summary, email_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', test_emails)
         
         conn.commit()
@@ -534,7 +869,7 @@ def get_recent_summaries():
         
         # Get ALL email data for the latest run
         c.execute('''
-            SELECT email_number, sender, receiver, subject, summary 
+            SELECT email_number, sender, receiver, subject, summary, email_date 
             FROM email_data 
             WHERE run_id = ? 
             ORDER BY email_number
@@ -550,7 +885,8 @@ def get_recent_summaries():
                 "from": row[1],
                 "to": row[2],
                 "subject": row[3],
-                "summary": row[4]
+                "summary": row[4],
+                "date": row[5]
             })
         
         conn.close()
@@ -576,14 +912,16 @@ def get_fallback_email_data():
             "from": "system@jubalandstate.so",
             "to": "archives@jubalandstate.so",
             "subject": "Daily System Report",
-            "summary": "Automated system report showing all services are running normally with 99.8% uptime. No critical issues reported."
+            "summary": "Automated system report showing all services are running normally with 99.8% uptime. No critical issues reported.",
+            "date": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         },
         {
             "number": 2,
             "from": "secretary@jubalandstate.so", 
             "to": "archives@jubalandstate.so",
             "subject": "Meeting Minutes Approval",
-            "summary": "Requesting approval for executive meeting minutes. Key decisions include budget allocation and project timelines."
+            "summary": "Requesting approval for executive meeting minutes. Key decisions include budget allocation and project timelines.",
+            "date": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
     ]
 
@@ -1037,15 +1375,16 @@ def store_email_data_for_dashboard(emails_data, all_summaries):
             try:
                 c.execute('''
                     INSERT INTO email_data 
-                    (run_id, email_number, sender, receiver, subject, summary)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    (run_id, email_number, sender, receiver, subject, summary, email_date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     run_id,
                     i,
                     str(email.get('from', 'Unknown'))[:100],
                     str(email.get('to', 'Unknown'))[:100],
                     str(email.get('subject', 'No Subject'))[:200],
-                    str(summary)[:500]
+                    str(summary)[:500],
+                    email.get('date', current_time)
                 ))
                 inserted_count += 1
                 
